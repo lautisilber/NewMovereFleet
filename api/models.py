@@ -1,3 +1,6 @@
 from django.db import models
 
-# Create your models here.
+
+class ApiTest(models.Model):
+    text = models.CharField(max_length=32)
+    number = models.IntegerField()
