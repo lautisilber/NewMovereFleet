@@ -1,8 +1,11 @@
 from django.db import models
+from django.contrib.auth.models import User
 from django.utils.translation import gettext_lazy
 from django.utils import timezone
 import datetime
 
+
+### GLOBALS ###
 
 class Company(models.Model):
     name = models.CharField(max_length=64, null=False)
@@ -70,33 +73,35 @@ class Vehicle(models.Model):
         else: # WTF!
             return 0
         
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=False)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=False, blank=False)
     
     def __str__(self) -> str:
         return f'Vehicle(id={self.id}, name={self.name})'
 
 
+### PARTS ###
+
 class PartType(models.Model):
-    name = models.CharField(max_length=64, null=False)
+    name = models.CharField(max_length=64, null=False, unique=True)
 
     def __str__(self) -> str:
-        return f'PartType(name={self.name})'
+        return f'PartType(id={self.id}, name={self.name})'
 
 
 class PartBase(models.Model):
     # The parts OTHER, and the ones with specific models have to exists from the get-go
 
-    vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE)
-    part_type = models.ForeignKey(PartType, on_delete=models.CASCADE)
+    vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, null=False, blank=False)
+    part_type = models.ForeignKey(PartType, on_delete=models.CASCADE, null=False, blank=False)
     info = models.CharField(max_length=128, null=False, default='')
     text = models.TextField(null=False, default='')
 
     max_mileage = models.PositiveIntegerField(null=True) # in kilometers, of course
     curr_mileage = models.PositiveIntegerField(default=0)
     max_time = models.DurationField(null=True)
-    curr_time = models.DurationField(default=datetime.timedelta())
+    curr_time = models.DurationField(default=datetime.timedelta)
 
-    install_date = models.DateField(default=timezone.now)
+    install_date = models.DateField(default=timezone.now, null=False)
     # TODO: need to add repair dates, probably as foreignkeys to have a repair history
 
     class Meta:
@@ -119,3 +124,74 @@ class Part(PartBase):
     pass
     
 
+### REPAIRS ###
+
+class RepairBase(models.Model):
+    description = models.TextField()
+    issue_date = models.DateField(default=timezone.now, null=False)
+    completed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    completion_date = models.DateField(default=None, null=True)
+
+    @property
+    def completed(self) -> bool:
+        return bool(self.completed_by)
+
+    class Meta:
+        abstract = True
+
+
+class Repair(RepairBase):
+    part = models.ForeignKey(Part, on_delete=models.CASCADE, null=False, blank=False)
+
+    def __str__(self) -> str:
+        return f'Repair(id={self.id}, part={self.part})'
+
+
+class RepairWheel(RepairBase):
+    part = models.ForeignKey(PartWheel, on_delete=models.CASCADE, null=False, blank=False)
+
+    def __str__(self) -> str:
+        return f'Repair(id={self.id}, part={self.part})'
+    
+
+### CHECKUPS ###
+
+class CheckupForm(models.Model):
+    template = models.BooleanField(default=False, null=False)
+    name = models.CharField(max_length=64, null=False)
+    vehicle = models.ForeignKey(Vehicle, on_delete=models.SET_NULL, null=True, blank=True)
+    assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    completed = models.BooleanField(default=False, null=False)
+    
+    def __str__(self) -> str:
+        v = self.vehicle.name if self.vehicle else False
+        return f'CheckupForm(id={self.id}, name={self.name}, template={self.template}, vehicle={v}, competed={self.completed})'
+
+
+class CheckupQuestion(models.Model):
+    template = models.BooleanField(default=False, null=False)
+    title = models.CharField(max_length=32, null=False)
+    text = models.CharField(max_length=256, null=False)
+
+    class AnswerTypes(models.TextChoices):
+        CHECKBOX = 'CB', gettext_lazy('Checkbox')
+        RADIO_1_5 = 'R5', gettext_lazy('1-5')
+        RADIO_1_10 = 'RX', gettext_lazy('1-10')
+        TEXT = 'TX', gettext_lazy('Text')
+        WHEEL = 'WL', gettext_lazy('Wheel')
+    
+    answer_type = models.CharField(max_length=2, choices=AnswerTypes.choices, default=AnswerTypes.CHECKBOX)
+    
+    answer_checkbox = models.BooleanField(null=True, default=None)
+    answer_radio_5 = models.PositiveSmallIntegerField(null=True, default=None)
+    answer_radio_10 = models.PositiveSmallIntegerField(null=True, default=None)
+    answer_text = models.TextField(null=True, default=None)
+    answer_wheel = models.CharField(max_length=16, null=True, default=None) # probably should be an encoded string
+
+    allow_notes = models.BooleanField(default=True, null=False)
+    notes = models.TextField(null=True)
+
+    checkup_forms = models.ManyToManyField(CheckupForm)
+
+    def __str__(self) -> str:
+        return f'CheckupQuestion(id={self.id}, title={self.title}, template={self.template}, answer_type={self.answer_type})'
