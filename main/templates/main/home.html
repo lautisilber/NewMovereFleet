@@ -1,0 +1,12 @@
+{% extends "main/base.html" %}
+
+{# Without the static tag, static files cannot be used #}
+{% load static%}
+
+{% block content %}
+<script src="{% static 'main/jsx/NavBar.jsx' %}" type="text/babel"></script>
+
+<script type="text/babel">
+    root.render(<NavBar />);
+</script>
+{% endblock content %}

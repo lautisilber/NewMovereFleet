@@ -1,0 +1,22 @@
+{% extends "main/base.html" %}
+
+{# Without the static tag, static files cannot be used #}
+{% load static%}
+
+{% block content %}
+<!-- <script src="{% static 'main/jsx/test.jsx' %}" type="text/babel"></script>
+
+<script type="text/babel">
+    root.render(<Test />);
+</script> -->
+
+<script src="{% static 'main/jsx/EditFormBase.jsx' %}" type="text/babel"></script>
+
+<script type="text/babel">
+    const props = {
+
+    };
+
+    root.render(<EditFormBase props={props} />);
+</script>
+{% endblock content %}

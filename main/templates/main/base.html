@@ -1,0 +1,65 @@
+{% load static%}
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- <link rel="stylesheet" href="{% static 'main/css/pico.min.css' %}"> -->
+    <script>
+    {% if user_info%}
+        {% if user.is_authenticated %}
+        const _user = {
+            username: '{{ user.username }}',
+            id: '{{ user.id }}',
+            email: '{{ user.email }}',
+            first_name: '{{ user.first_name }}',
+            last_name: '{{ user.last_name }}',
+            is_active: '{{ user.is_active }}',
+            is_staff: '{{ user.is_staff }}',
+            is_superuser: '{{ user.is_superuser }}',
+            position_type: '{{ user.profile.position_type }}',
+        }
+        {% else %}
+        const _user = false;
+        {% endif %}
+        const _userLinks = {
+            loginUrl: "{% url 'user-login' %}",
+            registerUrl: "{% url 'user-register' %}",
+            logoutUrl: "{% url 'user-logout' %}",
+            profileUrl: "{% url 'user-profile' %}",
+        }
+    {% endif %}
+    {% if home_link %}
+    const _homeLink = "{% url 'main-home' %}";
+    {% endif %}
+    </script>
+    {% block header %}{% endblock %}
+</head>
+
+<body>
+
+    <div id="app"></div>
+
+    <!-- <script type="text/babel">
+        function Hello() {
+            return <h1>Hello World!</h1>;
+        }
+        
+        
+        const container = document.getElementById('app');
+        const root = ReactDOM.createRoot(container);
+        root.render(<Hello />);
+    </script> -->
+
+    <script type="text/babel">
+        const container = document.getElementById('app');
+        const root = ReactDOM.createRoot(container);
+    </script>
+
+    {% block content %}{% endblock %}
+
+</body>
+
+</html>

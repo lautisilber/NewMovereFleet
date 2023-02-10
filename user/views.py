@@ -21,9 +21,9 @@ def register(request: HttpRequest):
             return redirect('login')
     else:
         form = UserRegisterForm()
-    return render(request, 'users/register.html', {'form': form})
+    return render(request, 'user/register.html', {'form': form})
 
 
 @login_required
 def profile(request: HttpRequest):
-    return render(request, 'users/profile.html')
+    return render(request, 'user/profile.html')
