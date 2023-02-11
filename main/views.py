@@ -1,5 +1,7 @@
 from django.shortcuts import render
-from django.http import HttpResponse, HttpRequest
+from django.http import HttpResponse, HttpRequest, HttpResponseForbidden
+from django.contrib.auth.decorators import login_required
+
 
 # The frontend works as follows 
 # There is a base html with all the required CDNs. It also has some templating to add 
@@ -16,9 +18,20 @@ from django.http import HttpResponse, HttpRequest
 def home(request: HttpRequest):
     context = {
         'user_info': True,
-        'home_link': True
+        'links': True
     }
     return render(request, 'main/home.html', context=context)
+
+
+@login_required
+def create_checkup_form(request: HttpRequest):
+    if request.user.profile.position_type < 3:
+        return HttpResponseForbidden("You don't have the rank to view this page")
+    context = {
+        'user_info': True,
+        'links': True
+    }
+    return render(request, 'main/create_checkup_form.html', context=context)
 
 
 ### utils views

@@ -8,7 +8,7 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <!-- <link rel="stylesheet" href="{% static 'main/css/pico.min.css' %}"> -->
     <script>
-    {% if user_info%}
+    {% if user_info %}
         {% if user.is_authenticated %}
         const _user = {
             username: '{{ user.username }}',
@@ -19,7 +19,7 @@
             is_active: '{{ user.is_active }}',
             is_staff: '{{ user.is_staff }}',
             is_superuser: '{{ user.is_superuser }}',
-            position_type: '{{ user.profile.position_type }}',
+            position_type: {{ user.profile.position_type }},
         }
         {% else %}
         const _user = false;
@@ -31,8 +31,10 @@
             profileUrl: "{% url 'user-profile' %}",
         }
     {% endif %}
-    {% if home_link %}
+    {% if links %}
     const _homeLink = "{% url 'main-home' %}";
+    const _adminLink = "{% url 'admin:index' %}";
+    const _createCheckupFormLink = "{% url 'main-create_checkup_form' %}";
     {% endif %}
     </script>
     {% block header %}{% endblock %}
