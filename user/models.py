@@ -9,13 +9,13 @@ class Profile(models.Model):
     info = models.CharField(max_length=128, null=True)
 
     class PositionType(models.TextChoices):
-        NOT_ASSIGNED = 'NA', gettext_lazy('Not assigned')
-        DRIVER = 'DR', gettext_lazy('Driver')
-        MECHANIC = 'MC', gettext_lazy('Mechanic')
-        ADMINISTRATOR = 'AD', gettext_lazy('Administrator')
-        SUPERUSER = 'SU', gettext_lazy('Super user')
+        NOT_ASSIGNED = -1, gettext_lazy('Not assigned')
+        DRIVER = 1, gettext_lazy('Driver')
+        MECHANIC = 2, gettext_lazy('Mechanic')
+        ADMINISTRATOR = 3, gettext_lazy('Administrator')
+        SUPERUSER = 4, gettext_lazy('Super user')
 
-    position_type = models.CharField(max_length=2, choices=PositionType.choices, default=PositionType.NOT_ASSIGNED, null=False)
+    position_type = models.SmallIntegerField(choices=PositionType.choices, default=PositionType.NOT_ASSIGNED, null=False)
 
     @classmethod
     def get_position_types(cls) -> list[tuple[str, str]]:
@@ -32,7 +32,7 @@ def create_user(sender, instance, created, **kwargs):
     if created:
         extra_info = {}
         if instance.is_superuser:
-            extra_info['position_type'] = 'SU'
+            extra_info['position_type'] = next(filter(lambda e: e[1] == 'Super user', Profile.get_position_types()))[0]
         Profile.objects.create(user=instance, **extra_info)
 
 signals.post_save.connect(create_user, sender=User, weak=False, dispatch_uid='user.models.create_user')

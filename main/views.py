@@ -1,5 +1,8 @@
 from django.shortcuts import render
-from django.http import HttpResponse, HttpRequest
+from django.http import HttpResponse, HttpRequest, HttpResponseForbidden
+from django.contrib.auth.decorators import login_required
+from .forms import ChecklistCreateForm, ChecklistQuestionCreateForm
+
 
 # The frontend works as follows 
 # There is a base html with all the required CDNs. It also has some templating to add 
@@ -14,11 +17,25 @@ from django.http import HttpResponse, HttpRequest
 
 
 def home(request: HttpRequest):
+    return render(request, 'main/home.html')
+
+
+@login_required
+def create_checklist(request: HttpRequest):
+    if request.user.profile.position_type < 3:
+        return HttpResponseForbidden("You haven't got the rank to view this page")
+    if request.method == 'POST':
+        return HttpResponse('CHOCHO')
+    
+    c_form = ChecklistCreateForm()
+    cq_form = ChecklistQuestionCreateForm()
+
     context = {
-        'user_info': True,
-        'home_link': True
+        'c_form': c_form,
+        'cq_form': cq_form
     }
-    return render(request, 'main/home.html', context=context)
+    print(dir(c_form.fields['name']))
+    return render(request, 'main/create_checklist.html', context=context)
 
 
 ### utils views

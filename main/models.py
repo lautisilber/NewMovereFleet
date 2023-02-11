@@ -156,7 +156,7 @@ class RepairWheel(RepairBase):
 
 ### CHECKUPS ###
 
-class CheckupForm(models.Model):
+class Checklist(models.Model):
     template = models.BooleanField(default=False, null=False)
     name = models.CharField(max_length=64, null=False)
     vehicle = models.ForeignKey(Vehicle, on_delete=models.SET_NULL, null=True, blank=True)
@@ -165,10 +165,10 @@ class CheckupForm(models.Model):
     
     def __str__(self) -> str:
         v = self.vehicle.name if self.vehicle else False
-        return f'CheckupForm(id={self.id}, name={self.name}, template={self.template}, vehicle={v}, competed={self.completed})'
+        return f'Checklist(id={self.id}, name={self.name}, template={self.template}, vehicle={v}, competed={self.completed})'
 
 
-class CheckupQuestion(models.Model):
+class ChecklistQuestion(models.Model):
     template = models.BooleanField(default=False, null=False)
     title = models.CharField(max_length=32, null=False)
     text = models.CharField(max_length=256, null=False)
@@ -191,7 +191,7 @@ class CheckupQuestion(models.Model):
     allow_notes = models.BooleanField(default=True, null=False)
     notes = models.TextField(null=True)
 
-    checkup_forms = models.ManyToManyField(CheckupForm)
+    checklists_forms = models.ManyToManyField(Checklist)
 
     def __str__(self) -> str:
-        return f'CheckupQuestion(id={self.id}, title={self.title}, template={self.template}, answer_type={self.answer_type})'
+        return f'ChecklistQuestion(id={self.id}, title={self.title}, template={self.template}, answer_type={self.answer_type})'
