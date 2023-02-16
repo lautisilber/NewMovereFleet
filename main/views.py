@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.http import HttpResponse, HttpRequest, HttpResponseForbidden
 from django.contrib.auth.decorators import login_required
 from .forms import ChecklistCreateForm, ChecklistQuestionCreateForm
+from .models import ChecklistQuestion
 
 
 # The frontend works as follows 
@@ -28,11 +29,14 @@ def create_checklist(request: HttpRequest):
         return HttpResponse('CHOCHO')
     
     c_form = ChecklistCreateForm()
-    cq_form = ChecklistQuestionCreateForm()
+    questions = ChecklistQuestion.objects.filter(template=True).all()
+
+    # HEY. maybe this is a way to acces individual fields from forms in the template
+    c_form.fields['template'].initial = True
 
     context = {
         'c_form': c_form,
-        'cq_form': cq_form
+        'questions': questions
     }
     print(dir(c_form.fields['name']))
     return render(request, 'main/create_checklist.html', context=context)

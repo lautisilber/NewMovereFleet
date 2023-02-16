@@ -9,7 +9,7 @@
     <form method="POST" enctype="multipart/form-data">
         {% csrf_token %}
         <fieldset class="form-group">
-            <legend class="border-bottom mb-4">Profile Info</legend>
+            <legend class="border-bottom mb-4">Create Checklist</legend>
 
             {{ c_form.non_field_errors }}
 
@@ -26,10 +26,26 @@
                         {{ field.errors }}
                         {{ field }}
                         {{ field.help_text }}
-                        CHOCHO
                     </td>
                 </tr>
                 {% endfor %}
+                <tr>
+                    <th>Questions</th>
+                    <td>
+                        <select name="questions" id="questions" multiple>
+                            {% if not questions %}
+                            <option value="" selected>---------</option>
+                            {% else %}
+                            {% for question in questions %}
+                            <option value="{{ question.id }}"><a href="#">{{ question.title }}</a></option>
+                            {% endfor %}
+                            {% endif %}
+                        </select>
+                        <br>
+                        <a href="#">Add question</a>
+                        <!-- This should be a + sign with a tooltip saying 'add question' -->
+                    </td>
+                </tr>
             </table>
 
         </fieldset>
