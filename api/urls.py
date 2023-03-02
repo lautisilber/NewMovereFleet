@@ -1,11 +1,11 @@
 from django.urls import path
+from rest_framework.urlpatterns import format_suffix_patterns
 
 from . import views
 
 urlpatterns = [
-    path('test/', views.test, name='api-test'),
-    path('get/all/<str:model_name>/', views.get_all, name='api-get_all'),
-    path('get/first/<str:model_name>/', views.get_first, name='api-get_first'),
-    path('post/<str:model_name>/', views.post, name='api-post'),
-    path('delete/<str:model_name>/<int:id>/', views.delete, name='api-delete'),
+    path('api_test/', views.api_test, name='api-apitest'),
+    path('api_test/<int:id>', views.api_test_id, name='api-apitest_id'),
 ]
+
+urlpatterns = format_suffix_patterns(urlpatterns)

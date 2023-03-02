@@ -1,43 +1,48 @@
-from django.shortcuts import render
-from django.http import JsonResponse, HttpRequest, HttpResponse
-
-from .utils import model_to_json, json_to_model, get_models
-
-def test(request: HttpRequest):
-    return JsonResponse({'test': 'OK'})
-
-
-def get_all(request: HttpRequest, model_name: str):
-    res_obj = model_to_json(model_name, True, request.GET.dict())
-    if res_obj is None:
-        return JsonResponse({'error': 'Model name was not found'})
-    return JsonResponse(res_obj, safe=False)
+from django.http import HttpResponse, JsonResponse, HttpRequest
+from .models import ApiTest
+from .serializers import ApiTestSerializer
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
 
 
-def get_first(request: HttpRequest, model_name: str):
-    res_obj = model_to_json(model_name, False, request.GET.dict())
-    if res_obj is None:
-        if model_name in get_models():
-            return JsonResponse({'info': 'There are no models created'})
-        return JsonResponse({'error': 'Model name was not found'})
-    return JsonResponse(res_obj)
+@api_view(['GET', 'POST'])
+def api_test(request: HttpRequest, format=None):
 
+    if request.method == 'GET':
+        api_tests = ApiTest.objects.all()
+        serializer = ApiTestSerializer(api_tests, many=True)
+        return Response(serializer.data)
 
-def post(request: HttpRequest, model_name: str):
-    res_dict = json_to_model(model_name, request.GET.dict())
-    return JsonResponse(res_dict)
+    elif request.method == 'POST':
+        print(request.data)
+        print(type(request.data))
+        serializer = ApiTestSerializer(data=request.data, many=True)
+        print(serializer.is_valid())
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+@api_view(['GET', 'PUT', 'DELETE'])
+def api_test_id(request: HttpRequest, id: int, format=None):
 
-def delete(request: HttpRequest, model_name: str, id: int):
-    models = get_models()
+    try:
+        api_test = ApiTest.objects.get(pk=id)
+    except ApiTest.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
 
-    if model_name not in models:
-        return JsonResponse({'error': 'Model name was not found'})
+    if request.method == 'GET':
+        serializer = ApiTestSerializer(api_test)
+        return Response(serializer.data)
     
-    model = models[model_name].objects.filter(id=id).first()
-
-    if not model:
-        return JsonResponse({'error': f"Didn't delete because model '{model_name}' of id '{id}' wasn't found"})
-
-    model.delete()
-    return JsonResponse({'OK': f'deleted {model_name} of id {id}'})
+    elif request.method == 'PUT':
+        serializer = ApiTestSerializer(api_test, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    elif request.method == 'DELETE':
+        api_test.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
