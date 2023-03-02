@@ -13,7 +13,7 @@
 
             {{ form.non_field_errors }}
 
-            {% for hidden_field in form.hidden_fields %}
+            {% for hidden_field in c_form.hidden_fields %}
             {{ hidden_field.errors }}
             {{ hidden_field }}
             {% endfor %}
@@ -29,23 +29,6 @@
                     </td>
                 </tr>
                 {% endfor %}
-                <tr>
-                    <th>Questions</th>
-                    <td>
-                        <select name="questions" id="questions" multiple>
-                            {% if not questions %}
-                            <option value="" selected>---------</option>
-                            {% else %}
-                            {% for question in questions %}
-                            <option value="{{ question.id }}"><a href="#">{{ question.title }}</a></option>
-                            {% endfor %}
-                            {% endif %}
-                        </select>
-                        <br>
-                        <a href="{% url 'main-question_create' %}">Add question</a>
-                        <!-- This should be a + sign with a tooltip saying 'add question' -->
-                    </td>
-                </tr>
             </table>
 
         </fieldset>

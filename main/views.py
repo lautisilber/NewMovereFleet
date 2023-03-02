@@ -28,18 +28,35 @@ def create_checklist(request: HttpRequest):
     if request.method == 'POST':
         return HttpResponse('CHOCHO')
     
-    c_form = ChecklistCreateForm()
+    form = ChecklistCreateForm()
     questions = ChecklistQuestion.objects.filter(template=True).all()
 
     # HEY. maybe this is a way to acces individual fields from forms in the template
-    c_form.fields['template'].initial = True
+    form.fields['template'].initial = True
 
     context = {
-        'c_form': c_form,
+        'form': form,
         'questions': questions
     }
-    print(dir(c_form.fields['name']))
     return render(request, 'main/create_checklist.html', context=context)
+
+
+@login_required
+def create_question(request: HttpRequest):
+    if request.user.profile.position_type < 3:
+        return HttpResponseForbidden("You haven't got the rank to view this page")
+    if request.method == 'POST':
+        return HttpResponse('CHOCHO')
+    
+    form = ChecklistQuestionCreateForm()
+
+    # HEY. maybe this is a way to acces individual fields from forms in the template
+    form.fields['template'].initial = True
+
+    context = {
+        'form': form
+    }
+    return render(request, 'main/create_question.html', context=context)
 
 
 ### utils views
