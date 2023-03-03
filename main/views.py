@@ -1,20 +1,9 @@
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.http import HttpResponse, HttpRequest, HttpResponseForbidden
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from .forms import ChecklistCreateForm, ChecklistQuestionCreateForm
-from .models import ChecklistQuestion
-
-
-# The frontend works as follows 
-# There is a base html with all the required CDNs. It also has some templating to add 
-# commonly used variables such as user_info which are passed as context to django's render function
-# and creates the react root variable.
-# the django render function calls an html template that extends the base and does two things:
-# 1
-#   calls any static JSX component needed for the page rendering
-# 2
-#   structures the react render (a method of the root variable)
-#   with all the components that were loaded
+from .models import ChecklistQuestionTemplate
 
 
 def home(request: HttpRequest):
@@ -26,13 +15,17 @@ def create_checklist(request: HttpRequest):
     if request.user.profile.position_type < 3:
         return HttpResponseForbidden("You haven't got the rank to view this page")
     if request.method == 'POST':
-        return HttpResponse('CHOCHO')
-    
-    form = ChecklistCreateForm()
-    questions = ChecklistQuestion.objects.filter(template=True).all()
+        form = ChecklistCreateForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(f'Created template checklist {form.name}!')
+            return redirect('main-home')
+    else:
+        form = ChecklistCreateForm()
+    questions = ChecklistQuestionTemplate.objects.all()
 
     # HEY. maybe this is a way to acces individual fields from forms in the template
-    form.fields['template'].initial = True
+    # form.fields['template'].initial = True
 
     context = {
         'form': form,
@@ -46,12 +39,13 @@ def create_question(request: HttpRequest):
     if request.user.profile.position_type < 3:
         return HttpResponseForbidden("You haven't got the rank to view this page")
     if request.method == 'POST':
-        return HttpResponse('CHOCHO')
-    
-    form = ChecklistQuestionCreateForm()
-
-    # HEY. maybe this is a way to acces individual fields from forms in the template
-    form.fields['template'].initial = True
+        form = ChecklistQuestionCreateForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(f'Created checklist question checklist titled {form.title}!')
+            return redirect('main-home')
+    else:
+        form = ChecklistQuestionCreateForm()
 
     context = {
         'form': form

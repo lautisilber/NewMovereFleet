@@ -154,22 +154,13 @@ class RepairWheel(RepairBase):
         return f'Repair(id={self.id}, part={self.part})'
     
 
-### CHECKUPS ###
+### CHECKLISTS ###
 
-class Checklist(models.Model):
-    template = models.BooleanField(default=False, null=False)
-    name = models.CharField(max_length=64, null=False)
-    vehicle = models.ForeignKey(Vehicle, on_delete=models.SET_NULL, null=True, blank=True)
-    assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
-    completed = models.BooleanField(default=False, null=False)
-    
-    def __str__(self) -> str:
-        v = self.vehicle.name if self.vehicle else False
-        return f'Checklist(id={self.id}, name={self.name}, template={self.template}, vehicle={v}, competed={self.completed})'
+class ChecklistQuestionBase(models.Model):
 
+    class Meta:
+        abstract = True
 
-class ChecklistQuestion(models.Model):
-    template = models.BooleanField(default=False, null=False)
     title = models.CharField(max_length=32, null=False)
     text = models.CharField(max_length=256, null=False)
 
@@ -179,19 +170,51 @@ class ChecklistQuestion(models.Model):
         RADIO_1_10 = 'RX', gettext_lazy('1-10')
         TEXT = 'TX', gettext_lazy('Text')
         WHEEL = 'WL', gettext_lazy('Wheel')
-    
+
     answer_type = models.CharField(max_length=2, choices=AnswerTypes.choices, default=AnswerTypes.CHECKBOX)
-    
+    allow_notes = models.BooleanField(default=True, null=False)
+
+
+class ChecklistQuestionTemplate(ChecklistQuestionBase):
+
+    def __str__(self) -> str:
+        return f'ChecklistQuestionTemplate(id={self.id}, title={self.title}, answer_type={self.answer_type})'
+
+
+class ChecklistQuestionInstance(ChecklistQuestionBase):
     answer_checkbox = models.BooleanField(null=True, default=None)
     answer_radio_5 = models.PositiveSmallIntegerField(null=True, default=None)
     answer_radio_10 = models.PositiveSmallIntegerField(null=True, default=None)
     answer_text = models.TextField(null=True, default=None)
     answer_wheel = models.CharField(max_length=16, null=True, default=None) # probably should be an encoded string
-
-    allow_notes = models.BooleanField(default=True, null=False)
     notes = models.TextField(null=True)
 
-    checklists_forms = models.ManyToManyField(Checklist)
+    def __str__(self) -> str:
+        return f'ChecklistQuestionInstance(id={self.id}, title={self.title}, answer_type={self.answer_type})'
+
+
+class ChecklistBase(models.Model):
+
+    class Meta:
+        abstract = True
+
+    name = models.CharField(max_length=64, null=False)
+    vehicle = models.ForeignKey(Vehicle, on_delete=models.SET_NULL, null=True, blank=True)
+    assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+
+
+class ChecklistTemplate(ChecklistBase):
+    checklist_question_templates = models.ManyToManyField(ChecklistQuestionTemplate, blank=True)
+    
+    def __str__(self) -> str:
+        v = self.vehicle.name if self.vehicle else False
+        return f'ChecklistTemplate(id={self.id}, name={self.name}, vehicle={v})'
+
+
+class ChecklistInstace(ChecklistBase):
+    checklist_question_instances = models.ManyToManyField(ChecklistQuestionInstance, blank=True)
+    completed = models.BooleanField(default=False, null=False)
 
     def __str__(self) -> str:
-        return f'ChecklistQuestion(id={self.id}, title={self.title}, template={self.template}, answer_type={self.answer_type})'
+        v = self.vehicle.name if self.vehicle else False
+        return f'ChecklistInstance(id={self.id}, name={self.name}, vehicle={v}, competed={self.completed})'

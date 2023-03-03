@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
-from .models import Company, Vehicle, PartType, Part, PartWheel, Repair, RepairWheel, Checklist, ChecklistQuestion
+from .models import Company, Vehicle, PartType, Part, PartWheel, Repair, RepairWheel, ChecklistTemplate, \
+                    ChecklistInstace, ChecklistQuestionTemplate, ChecklistQuestionInstance
 
 
 # class DynamicModelSerializer(serializers.ModelSerializer):
@@ -87,17 +88,44 @@ class RepairWheelSerializer(serializers.ModelSerializer):
         depth = 0
         fields = '__all__'
 
-class ChecklistSerializer(serializers.ModelSerializer):
-    url_name = 'checklist'
-    questions = PartSerializer(source='checklistquestion_set', many=True, read_only=True)
+class ChecklistTemplateSerializer(serializers.ModelSerializer):
+    url_name = 'checklist_template'
     class Meta:
-        model = Checklist
+        model = ChecklistTemplate
         depth = 1
         fields = '__all__'
 
-class ChecklistQuestionSerializer(serializers.ModelSerializer):
-    url_name = 'checklist_question'
+class ChecklistInstanceSerializer(serializers.ModelSerializer):
+    url_name = 'checklist_instance'
     class Meta:
-        model = ChecklistQuestion
+        model = ChecklistInstace
+        depth = 1
+        fields = '__all__'
+
+class ChecklistInstanceSerializer_reduced(serializers.ModelSerializer):
+    class Meta:
+        model = ChecklistTemplate
         depth = 0
+        fields = '__all__'
+
+class ChecklistInstanceSerializer_reduced(serializers.ModelSerializer):
+    class Meta:
+        model = ChecklistInstace
+        depth = 0
+        fields = '__all__'
+
+class ChecklistQuestionTemplateSerializer(serializers.ModelSerializer):
+    url_name = 'checklist_question_template'
+    checklist_templates = ChecklistInstanceSerializer_reduced(source='checklisttemplate_set', many=True, read_only=True)
+    class Meta:
+        model = ChecklistQuestionTemplate
+        depth = 1
+        fields = '__all__'
+
+class ChecklistQuestionInstanceSerializer(serializers.ModelSerializer):
+    url_name = 'checklist_question_instance'
+    checklist_instances = ChecklistInstanceSerializer_reduced(source='checklistinstance_set', many=True, read_only=True)
+    class Meta:
+        model = ChecklistQuestionTemplate
+        depth = 1
         fields = '__all__'
