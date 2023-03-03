@@ -21,9 +21,8 @@ all_models = { k:v.Meta.model for k, v in all_serializers.items() }
 @api_view(['GET', 'POST'])
 def getpost(request: HttpRequest, url_name: str, format=None):
 
-    print(url_name)
-    print(all_models)
-    print(all_serializers)
+    if request.user.profile.position_type < 3:
+        return Response(status=status.HTTP_403_FORBIDDEN)
 
     if url_name not in all_serializers:
         return Response(status=status.HTTP_404_NOT_FOUND)
@@ -60,6 +59,9 @@ def getpost(request: HttpRequest, url_name: str, format=None):
 
 @api_view(['GET', 'PUT', 'DELETE'])
 def getputdelete(request: HttpRequest, url_name: str, id: int, format=None):
+
+    if request.user.profile.position_type < 3:
+        return Response(status=status.HTTP_403_FORBIDDEN)
 
     if url_name not in all_serializers:
         return Response(status=status.HTTP_404_NOT_FOUND)

@@ -77,18 +77,19 @@ class RepairSerializer(serializers.ModelSerializer):
     url_name = 'repair'
     class Meta:
         model = Repair
-        depth = 1
+        depth = 0
         fields = '__all__'
 
 class RepairWheelSerializer(serializers.ModelSerializer):
     url_name = 'repair_wheel'
     class Meta:
         model = RepairWheel
-        depth = 1
+        depth = 0
         fields = '__all__'
 
 class ChecklistSerializer(serializers.ModelSerializer):
     url_name = 'checklist'
+    questions = PartSerializer(source='checklistquestion_set', many=True, read_only=True)
     class Meta:
         model = Checklist
         depth = 1
@@ -98,5 +99,5 @@ class ChecklistQuestionSerializer(serializers.ModelSerializer):
     url_name = 'checklist_question'
     class Meta:
         model = ChecklistQuestion
-        depth = 1
+        depth = 0
         fields = '__all__'
