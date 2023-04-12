@@ -116,16 +116,16 @@ class ChecklistInstanceSerializer_reduced(serializers.ModelSerializer):
 
 class ChecklistQuestionTemplateSerializer(serializers.ModelSerializer):
     url_name = 'checklist_question_template'
-    checklist_templates = ChecklistInstanceSerializer_reduced(source='checklisttemplate_set', many=True, read_only=True)
+    #checklist_templates = ChecklistInstanceSerializer_reduced(source='checklisttemplate_set', many=True, read_only=True)
     class Meta:
         model = ChecklistQuestionTemplate
-        depth = 1
+        depth = 0
         fields = '__all__'
 
 class ChecklistQuestionInstanceSerializer(serializers.ModelSerializer):
     url_name = 'checklist_question_instance'
-    checklist_instances = ChecklistInstanceSerializer_reduced(source='checklistinstance_set', many=True, read_only=True)
+    #checklist_instances = ChecklistInstanceSerializer_reduced(source='checklistinstance_set', many=True, read_only=True)
     class Meta:
         model = ChecklistQuestionTemplate
-        depth = 1
+        depth = 0
         fields = '__all__'

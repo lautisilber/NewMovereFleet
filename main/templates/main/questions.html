@@ -1,0 +1,16 @@
+{% extends "main/base.html" %}
+
+{# Without the static tag, static files cannot be used #}
+{% load static %}
+
+{% block content %}
+<h1>Checklist Questions List</h1>
+<div>
+    <ul>
+        {% for question in questions %}
+        <li><a href="{% url 'main-question_update' question_id=question.id %}?next={% url 'main-question' %}">{{ question.title }}</a></li>
+        {% endfor %}
+    </ul>
+</div>
+
+{% endblock content %}

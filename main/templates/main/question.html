@@ -4,7 +4,7 @@
 {% load static %}
 
 {% block content %}
-<h1>Create Checklist</h1>
+<h1>{{ tite }}</h1>
 <div>
     <form method="POST" enctype="multipart/form-data">
         {% csrf_token %}
@@ -33,9 +33,14 @@
 
         </fieldset>
         <div class="form-group">
+            <button>Delete</button>
             <button class="btn btn-outline-info" type="submit">Create</button>
         </div>
     </form>
 </div>
+
+<script>
+    
+</script>
 
 {% endblock content %}
