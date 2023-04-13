@@ -8,6 +8,7 @@ import datetime
 ### GLOBALS ###
 
 class Company(models.Model):
+    url_name = 'company'
     name = models.CharField(max_length=64, null=False)
 
     def __str__(self) -> str:
@@ -23,6 +24,7 @@ class Company(models.Model):
 # part of hte vehicle model itself 
 
 class Vehicle(models.Model):
+    url_name = 'vehicle'
     name = models.CharField(max_length=128, null=False, unique=True)
     mileage = models.PositiveIntegerField(default=0)
     fuel = models.PositiveSmallIntegerField(default=0)
@@ -82,6 +84,7 @@ class Vehicle(models.Model):
 ### PARTS ###
 
 class PartType(models.Model):
+    url_name = 'part_type'
     name = models.CharField(max_length=64, null=False, unique=True)
 
     def __str__(self) -> str:
@@ -116,6 +119,7 @@ class PartBase(models.Model):
 
 
 class PartWheel(PartBase):
+    url_name = 'part_wheel'
     number = models.PositiveSmallIntegerField(null=False, default=0)
     refurbished = models.PositiveSmallIntegerField(null=False, default=0)
 
@@ -141,6 +145,7 @@ class RepairBase(models.Model):
 
 
 class Repair(RepairBase):
+    url_name = 'repair'
     part = models.ForeignKey(Part, on_delete=models.CASCADE, null=False, blank=False)
 
     def __str__(self) -> str:
@@ -148,6 +153,7 @@ class Repair(RepairBase):
 
 
 class RepairWheel(RepairBase):
+    url_name = 'repair_wheel'
     part = models.ForeignKey(PartWheel, on_delete=models.CASCADE, null=False, blank=False)
 
     def __str__(self) -> str:
@@ -157,7 +163,6 @@ class RepairWheel(RepairBase):
 ### CHECKLISTS ###
 
 class ChecklistQuestionBase(models.Model):
-
     class Meta:
         abstract = True
 
@@ -176,12 +181,13 @@ class ChecklistQuestionBase(models.Model):
 
 
 class ChecklistQuestionTemplate(ChecklistQuestionBase):
-
+    url_name = 'checklist_question_template'
     def __str__(self) -> str:
         return f'ChecklistQuestionTemplate(id={self.id}, title={self.title}, answer_type={self.answer_type})'
 
 
 class ChecklistQuestionInstance(ChecklistQuestionBase):
+    url_name = 'checklist_question_instance'
     answer_checkbox = models.BooleanField(null=True, default=None)
     answer_radio_5 = models.PositiveSmallIntegerField(null=True, default=None)
     answer_radio_10 = models.PositiveSmallIntegerField(null=True, default=None)
@@ -194,7 +200,6 @@ class ChecklistQuestionInstance(ChecklistQuestionBase):
 
 
 class ChecklistBase(models.Model):
-
     class Meta:
         abstract = True
 
@@ -204,6 +209,7 @@ class ChecklistBase(models.Model):
 
 
 class ChecklistTemplate(ChecklistBase):
+    url_name = 'checklist_template'
     checklist_question_templates = models.ManyToManyField(ChecklistQuestionTemplate, blank=True)
     
     def __str__(self) -> str:
@@ -212,6 +218,7 @@ class ChecklistTemplate(ChecklistBase):
 
 
 class ChecklistInstace(ChecklistBase):
+    url_name = 'checklist_instance'
     checklist_question_instances = models.ManyToManyField(ChecklistQuestionInstance, blank=True)
     completed = models.BooleanField(default=False, null=False)
 

@@ -42,7 +42,7 @@
                             {% endif %}
                         </select>
                         <br>
-                        <a href="{% url 'main-question_create' %}">Add question</a>
+                        <a href="{% url 'main-question_add' %}?next={% url 'main-checklist_add' %}">Add question</a>
                         <!-- This should be a + sign with a tooltip saying 'add question' -->
                     </td>
                 </tr>
@@ -50,9 +50,11 @@
 
         </fieldset>
         <div class="form-group">
-            <button class="btn btn-outline-info" type="submit">Create</button>
+            <button class="btn btn-outline-info" type="submit">{{ ok_button_text }}</button>
         </div>
     </form>
 </div>
-
+{% if checklist %}
+<a href="{% url 'main-checklist_delete' checklist_id=checklist.id %}?next={% url 'main-checklist' %}">Delete</a>
+{% endif %}
 {% endblock content %}

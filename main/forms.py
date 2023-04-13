@@ -1,16 +1,30 @@
 from django import forms
-from .models import ChecklistTemplate, ChecklistQuestionTemplate
+from .models import ChecklistTemplate, ChecklistQuestionTemplate, Company, Vehicle
 from django.utils.translation import gettext_lazy
 
 
-class ChecklistCreateForm(forms.ModelForm):
+class CompanyForm(forms.ModelForm):
+    error_css_class = 'form-error'
+    required_css_class = 'form-required'
+    class Meta:
+        model = Company
+        fields = ['name']
+
+class VehicleForm(form.ModelForm):
+    error_css_class = 'form-error'
+    required_css_class = 'form-required'
+    class Meta:
+        model = Vehicle
+        fields = ['name', 'mileage', 'fuel', 'vehicle_type', 'drivetrain_type', 'company']
+
+class ChecklistForm(forms.ModelForm):
     error_css_class = 'form-error'
     required_css_class = 'form-required'
     class Meta:
         model = ChecklistTemplate
         fields = ['name', 'vehicle']
 
-class ChecklistQuestionCreateForm(forms.ModelForm):
+class ChecklistQuestionForm(forms.ModelForm):
     error_css_class = 'form-error'
     required_css_class = 'form-required'
     class Meta:
