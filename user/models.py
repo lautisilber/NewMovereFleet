@@ -8,8 +8,8 @@ class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     info = models.CharField(max_length=128, null=True)
 
-    class PositionType(models.TextChoices):
-        NOT_ASSIGNED = -1, gettext_lazy('Not assigned')
+    class PositionType(models.IntegerChoices):
+        NOT_ASSIGNED = 0, gettext_lazy('Not assigned')
         DRIVER = 1, gettext_lazy('Driver')
         MECHANIC = 2, gettext_lazy('Mechanic')
         ADMINISTRATOR = 3, gettext_lazy('Administrator')

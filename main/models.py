@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from user.models import Profile
 from django.utils.translation import gettext_lazy
 from django.utils import timezone
 import datetime
@@ -28,52 +29,6 @@ class Vehicle(models.Model):
     name = models.CharField(max_length=128, null=False, unique=True)
     mileage = models.PositiveIntegerField(default=0)
     fuel = models.PositiveSmallIntegerField(default=0)
-
-
-    class VehicleType(models.TextChoices):
-        OTHER = 'XX', gettext_lazy('Other')
-        MINI_VAN = 'MV', gettext_lazy('Mini van')
-        TRUCK = 'TK', gettext_lazy('Truck')
-        TRAILER = 'TR', gettext_lazy('Trailer')
-        PICK_UP = 'PU', gettext_lazy('Pick-up truck')
-
-    
-    vehicle_type = models.CharField(max_length=2, choices=VehicleType.choices, default=VehicleType.OTHER, null=False)
-
-    class DrivetrainType(models.TextChoices):
-        OTHER = 'XXX', gettext_lazy('Other')
-        SINGLE_SINGLE = '220', gettext_lazy('Two axles, both with two wheels')
-        SINGLE_DOUBLE = '240', gettext_lazy('Two axles, one with two whels, one with four')
-        SINGLE_SINGLE_SINGLE = '222', gettext_lazy('Three axles with two wheels')
-        SINGLE_DOUBLE_SINGLE = '242', gettext_lazy('Three axles with two, three and two wheels')
-        SINGLE_DOUBLE_DOUBLE = '244', gettext_lazy('Three axles, one with two wheels and two with three')
-    
-    drivetrain_type = models.CharField(max_length=3, choices=DrivetrainType.choices, default=DrivetrainType.OTHER, null=False)
-
-    @classmethod
-    def get_vehicle_types(cls) -> list[tuple[str, str]]:
-        return cls.VehicleType.choices
-    
-    @classmethod
-    def get_drivetrain_types(cls) -> list[tuple[str, str]]:
-        return cls.DrivetrainType.choices
-    
-    def get_drivetrain_wheel_count(self) -> int:
-        drivetrains = tuple(d[0] for d in self.__class__.get_drivetrain_types())
-        if self.drivetrain_type == drivetrains[0]: # OTHER
-            return -1
-        elif self.drivetrain_type == drivetrains[1]: # SINGLE_SINGLE
-            return 4
-        elif self.drivetrain_type == drivetrains[2]: # SINGLE_DOUBLE
-            return 6
-        elif self.drivetrain_type == drivetrains[3]: # SINGLE_SINGLE_SINGLE
-            return 6
-        elif self.drivetrain_type == drivetrains[4]: # SINGLE_DOUBLE_SINGLE
-            return 8
-        elif self.drivetrain_type == drivetrains[5]: # SINGLE_DOUBLE_DOUBLE
-            return 10
-        else: # WTF!
-            return 0
         
     company = models.ForeignKey(Company, on_delete=models.CASCADE, null=False, blank=False)
     
@@ -165,63 +120,57 @@ class RepairWheel(RepairBase):
 class ChecklistQuestionBase(models.Model):
     class Meta:
         abstract = True
-
-    title = models.CharField(max_length=32, null=False)
-    text = models.CharField(max_length=256, null=False)
-
-    class AnswerTypes(models.TextChoices):
-        CHECKBOX = 'CB', gettext_lazy('Checkbox')
-        RADIO_1_5 = 'R5', gettext_lazy('1-5')
-        RADIO_1_10 = 'RX', gettext_lazy('1-10')
-        TEXT = 'TX', gettext_lazy('Text')
-        WHEEL = 'WL', gettext_lazy('Wheel')
-
-    answer_type = models.CharField(max_length=2, choices=AnswerTypes.choices, default=AnswerTypes.CHECKBOX)
-    allow_notes = models.BooleanField(default=True, null=False)
+    question = models.CharField(max_length=32, null=False)
+    info = models.CharField(max_length=256, null=True, blank=True)
 
 
 class ChecklistQuestionTemplate(ChecklistQuestionBase):
     url_name = 'checklist_question_template'
+    vehicles = models.ManyToManyField(Vehicle, blank=True, null=True)
+    periodicity_days = models.IntegerField(default=0, null=False, blank=True) # cada cuantos dias debe ser completado. 0 significa que debe ser administrado por la persona que complete
+    periodicity_days_notice = models.IntegerField(default=0, null=False, blank=True) # cuantos dias de changui para la persona que complete
+    position_type = models.SmallIntegerField(choices=Profile.PositionType.choices, default=Profile.PositionType.NOT_ASSIGNED, null=False) # TODO: no anda
+
     def __str__(self) -> str:
-        return f'ChecklistQuestionTemplate(id={self.id}, title={self.title}, answer_type={self.answer_type})'
+        return f'ChecklistQuestionTemplate(id={self.id}, question={self.question})'
+
+
+class ChecklistInstace(models.Model):
+    url_name = 'checklist_instance'
+    name = models.CharField(max_length=64, null=False)
+    vehicle = models.ForeignKey(Vehicle, on_delete=models.SET_NULL, null=True, blank=True)
+    #checklist_template = models.ForeignKey(ChecklistTemplate, models.SET_NULL, null=True)
+    completed = models.BooleanField(default=False, null=False)
+    completed_on = models.DateTimeField(null=True)
+
+    def __str__(self) -> str:
+        return f'ChecklistInstance(id={self.id}, name={self.name}, competed={self.completed})'
 
 
 class ChecklistQuestionInstance(ChecklistQuestionBase):
     url_name = 'checklist_question_instance'
-    answer_checkbox = models.BooleanField(null=True, default=None)
-    answer_radio_5 = models.PositiveSmallIntegerField(null=True, default=None)
-    answer_radio_10 = models.PositiveSmallIntegerField(null=True, default=None)
-    answer_text = models.TextField(null=True, default=None)
-    answer_wheel = models.CharField(max_length=16, null=True, default=None) # probably should be an encoded string
+    checklist_question_template = models.ForeignKey(ChecklistQuestionTemplate, models.SET_NULL, null=True)
+    checklist_instance = models.ForeignKey(ChecklistInstace, models.SET_NULL, null=True)
+    answer = models.BooleanField(null=True, default=None)
     notes = models.TextField(null=True)
 
     def __str__(self) -> str:
-        return f'ChecklistQuestionInstance(id={self.id}, title={self.title}, answer_type={self.answer_type})'
+        return f'ChecklistQuestionInstance(id={self.id}, title={self.title}, answer={self.answer})'
 
 
-class ChecklistBase(models.Model):
-    class Meta:
-        abstract = True
+# class ChecklistBase(models.Model):
+#     class Meta:
+#         abstract = True
 
-    name = models.CharField(max_length=64, null=False)
-    vehicle = models.ForeignKey(Vehicle, on_delete=models.SET_NULL, null=True, blank=True)
-    assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+#     name = models.CharField(max_length=64, null=False)
+#     vehicle = models.ForeignKey(Vehicle, on_delete=models.SET_NULL, null=True, blank=True)
+#     assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
 
 
-class ChecklistTemplate(ChecklistBase):
-    url_name = 'checklist_template'
-    checklist_question_templates = models.ManyToManyField(ChecklistQuestionTemplate, blank=True)
+# class ChecklistTemplate(ChecklistBase):
+#     url_name = 'checklist_template'
+#     checklist_question_templates = models.ManyToManyField(ChecklistQuestionTemplate, blank=True)
     
-    def __str__(self) -> str:
-        v = self.vehicle.name if self.vehicle else False
-        return f'ChecklistTemplate(id={self.id}, name={self.name}, vehicle={v})'
-
-
-class ChecklistInstace(ChecklistBase):
-    url_name = 'checklist_instance'
-    checklist_question_instances = models.ManyToManyField(ChecklistQuestionInstance, blank=True)
-    completed = models.BooleanField(default=False, null=False)
-
-    def __str__(self) -> str:
-        v = self.vehicle.name if self.vehicle else False
-        return f'ChecklistInstance(id={self.id}, name={self.name}, vehicle={v}, competed={self.completed})'
+#     def __str__(self) -> str:
+#         v = self.vehicle.name if self.vehicle else False
+#         return f'ChecklistTemplate(id={self.id}, name={self.name}, vehicle={v})'

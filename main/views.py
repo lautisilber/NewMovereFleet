@@ -3,8 +3,9 @@ from django.http import HttpResponse, HttpRequest, HttpResponseForbidden, HttpRe
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods
 from django.contrib import messages
-from .forms import ChecklistForm, ChecklistQuestionForm, CompanyForm
-from .models import ChecklistQuestionTemplate, ChecklistTemplate, Company
+from .forms import ChecklistQuestionForm, CompanyForm
+from .models import ChecklistQuestionTemplate, Company
+from .utils import model_view_create, model_view_update, model_view_delete
 
 
 def home(request: HttpRequest):
@@ -15,200 +16,87 @@ def home(request: HttpRequest):
 
 @login_required
 def create_company(request: HttpRequest):
-    if request.user.profile.position_type < 3:
-        return HttpResponseForbidden("You haven't got the rank to view this page")
-    if request.method == 'POST':
-        form = Company(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, f'Created company {form.instance.name}!')
-            return redirect(request.GET.get('next', 'main-home'))
-    else:
-        form = Company()
+    res = model_view_create(request, CompanyForm)
+
+    if isinstance(res, HttpResponse):
+        return res
+
     context = {
-        'form': form,
-        'ok_button_text': 'Create'
+        'title': 'Create Company',
+        'ok_button_text': 'Create',
+        'form': res
     }
     return render(request, 'main/company.html', context=context)
 
 
 @login_required
-def update_checklist(request: HttpRequest, company_id: int):
-    if request.user.profile.position_type < 3:
-        return HttpResponseForbidden("You haven't got the rank to view this page")
-    if not Company.objects.filter(id=company_id).exists():
-        return HttpResponseNotFound(f'The checklist template with id {company_id} was not found')
-    company = Company.objects.get(id=company_id)
-    if request.method == 'POST':
-        form = ChecklistForm(request.POST, instance=company)
-        if form.is_valid():
-            form.save()
-            messages.success(request, f'Created template checklist {form.instance.name}!')
-            return redirect(request.GET.get('next', 'main-home'))
-    else:
-        form = ChecklistForm(instance=company)
-    questions = ChecklistQuestionTemplate.objects.all()
+def update_company(request: HttpRequest, question_id: int):
+    res = model_view_update(request, CompanyForm, question_id)
+
+    if isinstance(res, HttpResponse):
+        return res
+
     context = {
-        'form': form,
-        'questions': questions,
-        'checklist': checklist,
-        'ok_button_text': 'Update'
+        'title': 'Update Company',
+        'ok_button_text': 'Update',
+        'company': res.instance,
+        'form': res
     }
-    return render(request, 'main/company.html', context=context)
+    return render(request, 'main/question.html', context=context)
 
 
 @login_required
-def delete_checklist(request: HttpRequest, checklist_id: int):
-    if request.user.profile.position_type < 3:
-        return HttpResponseForbidden("You haven't got the rank to view this page")
-    if not ChecklistTemplate.objects.filter(id=checklist_id).exists():
-        return HttpResponseNotFound(f'The checklist template with id {checklist_id} was not found')
-    checklist = ChecklistTemplate.objects.get(id=checklist_id)
-    checklist.delete()
-    return redirect(request.GET.get('next', 'main-home'))
+def delete_company(request: HttpRequest, question_id: int):
+    return model_view_delete(request, Company, question_id)
 
 
 @login_required
-def checklists(request: HttpRequest):
+def companies(request: HttpRequest):
     if request.user.profile.position_type < 3:
         return HttpResponseForbidden("You haven't got the rank to view this page")
     context = {
-        'checklists': ChecklistTemplate.objects.all()
+        'companies': Company.objects.all()
     }
     return render(request, 'main/companies.html', context=context)
-
-
-### checklists
-
-@login_required
-def create_checklist(request: HttpRequest):
-    if request.user.profile.position_type < 3:
-        return HttpResponseForbidden("You haven't got the rank to view this page")
-    if request.method == 'POST':
-        form = ChecklistForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, f'Created template checklist {form.instance.name}!')
-            return redirect(request.GET.get('next', 'main-home'))
-    else:
-        form = ChecklistForm()
-    questions = ChecklistQuestionTemplate.objects.all()
-    context = {
-        'form': form,
-        'questions': questions,
-        'ok_button_text': 'Create'
-    }
-    return render(request, 'main/checklist.html', context=context)
-
-
-@login_required
-def update_checklist(request: HttpRequest, checklist_id: int):
-    if request.user.profile.position_type < 3:
-        return HttpResponseForbidden("You haven't got the rank to view this page")
-    if not ChecklistTemplate.objects.filter(id=checklist_id).exists():
-        return HttpResponseNotFound(f'The checklist template with id {checklist_id} was not found')
-    checklist = ChecklistTemplate.objects.get(id=checklist_id)
-    if request.method == 'POST':
-        form = ChecklistForm(request.POST, instance=checklist)
-        if form.is_valid():
-            form.save()
-            messages.success(request, f'Created template checklist {form.instance.name}!')
-            return redirect(request.GET.get('next', 'main-home'))
-    else:
-        form = ChecklistForm(instance=checklist)
-    questions = ChecklistQuestionTemplate.objects.all()
-
-    # HEY. maybe this is a way to acces individual fields from forms in the template
-    # form.fields['template'].initial = True
-
-    context = {
-        'form': form,
-        'questions': questions,
-        'checklist': checklist,
-        'ok_button_text': 'Update'
-    }
-    return render(request, 'main/checklist.html', context=context)
-
-
-@login_required
-def delete_checklist(request: HttpRequest, checklist_id: int):
-    if request.user.profile.position_type < 3:
-        return HttpResponseForbidden("You haven't got the rank to view this page")
-    if not ChecklistTemplate.objects.filter(id=checklist_id).exists():
-        return HttpResponseNotFound(f'The checklist template with id {checklist_id} was not found')
-    checklist = ChecklistTemplate.objects.get(id=checklist_id)
-    checklist.delete()
-    return redirect(request.GET.get('next', 'main-home'))
-
-
-@login_required
-def checklists(request: HttpRequest):
-    if request.user.profile.position_type < 3:
-        return HttpResponseForbidden("You haven't got the rank to view this page")
-    context = {
-        'checklists': ChecklistTemplate.objects.all()
-    }
-    return render(request, 'main/checklists.html', context=context)
 
 
 ### checklist questions
 
 @login_required
 def create_question(request: HttpRequest):
-    if request.user.profile.position_type < 3:
-        return HttpResponseForbidden("You haven't got the rank to view this page")
-    if request.method == 'POST':
-        form = ChecklistQuestionForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, f'Created checklist question checklist titled {form.instance.title}!')
-            return redirect(request.GET.get('next', 'main-home'))
-    else:
-        form = ChecklistQuestionForm()
+    res = model_view_create(request, ChecklistQuestionForm)
+
+    if isinstance(res, HttpResponse):
+        return res
 
     context = {
         'title': 'Create Question',
         'ok_button_text': 'Create',
-        'form': form
+        'form': res
     }
     return render(request, 'main/question.html', context=context)
 
 
 @login_required
 def update_question(request: HttpRequest, question_id: int):
-    if request.user.profile.position_type < 3:
-        return HttpResponseForbidden("You haven't got the rank to view this page")
-    if not ChecklistQuestionTemplate.objects.filter(id=question_id).exists():
-        return HttpResponseNotFound(f'The question template with id {question_id} was not found')
-    question = ChecklistQuestionTemplate.objects.get(id=question_id)
-    if request.method == 'POST':
-        form = ChecklistQuestionForm(request.POST, instance=question)
-        if form.is_valid():
-            form.save()
-            messages.success(request, f'Created checklist question checklist titled {form.instance.title}!')
-            return redirect(request.GET.get('next', 'main-home'))
-    else:
-        form = ChecklistQuestionForm(instance=question)
+    res = model_view_update(request, ChecklistQuestionForm, question_id)
+
+    if isinstance(res, HttpResponse):
+        return res
 
     context = {
         'title': 'Update Question',
         'ok_button_text': 'Update',
-        'question': question,
+        'question': res.instance,
         #'url_name': ChecklistQuestionTemplate.url_name,
-        'form': form
+        'form': res
     }
     return render(request, 'main/question.html', context=context)
 
 
 @login_required
 def delete_question(request: HttpRequest, question_id: int):
-    if request.user.profile.position_type < 3:
-        return HttpResponseForbidden("You haven't got the rank to view this page")
-    if not ChecklistQuestionTemplate.objects.filter(id=question_id).exists():
-        return HttpResponseNotFound(f'The form question template with id {question_id} was not found')
-    question = ChecklistQuestionTemplate.objects.get(id=question_id)
-    question.delete()
-    return redirect(request.GET.get('next', 'main-home'))
+    return model_view_delete(request, ChecklistQuestionTemplate, question_id)
 
 
 @login_required

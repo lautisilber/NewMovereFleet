@@ -4,10 +4,10 @@ from . import views
 
 urlpatterns = [
     path('', views.home, name='main-home'),
-    path('checklist/', views.checklists, name='main-checklist'),
-    path('checklist/add/', views.create_checklist, name='main-checklist_add'),
-    path('checklist/<int:checklist_id>/', views.update_checklist, name='main-checklist_update'),
-    path('checklist/<int:checklist_id>/delete/', views.delete_checklist, name='main-checklist_delete'),
+    path('company/', views.companies, name='main-company'),
+    path('company/add/', views.create_company, name='main-company_add'),
+    path('company/<int:checklist_id>/', views.update_company, name='main-company_update'),
+    path('company/<int:checklist_id>/delete/', views.delete_company, name='main-company_delete'),
 
     path('question/', views.questions, name='main-question'),
     path('question/add/', views.create_question, name='main-question_add'),

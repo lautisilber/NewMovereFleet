@@ -8,7 +8,7 @@
 <div>
     <ul>
         {% for question in questions %}
-        <li><a href="{% url 'main-question_update' question_id=question.id %}?next={% url 'main-question' %}">{{ question.title }}</a></li>
+        <li><a href="{% url 'main-question_update' question_id=question.id %}?next={% url 'main-question' %}">{{ question.question }}</a></li>
         {% endfor %}
     </ul>
 </div>
