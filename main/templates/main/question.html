@@ -38,8 +38,8 @@
         </div>
     </form>
 </div>
-{% if question %}
-<a href="{% url 'main-question_delete' question_id=question.id %}?next={% url 'main-question' %}">Delete</a>
+{% if model %}
+<a href="{% url 'main-question_delete' model_id=model.id %}?next={% url 'main-question' %}">Delete</a>
 {% endif %}
 
 {% endblock content %}

@@ -3,18 +3,25 @@ from django.http import HttpResponse, HttpRequest, HttpResponseForbidden, HttpRe
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods
 from django.contrib import messages
-from .forms import ChecklistQuestionForm, CompanyForm
-from .models import ChecklistQuestionTemplate, Company
+from .forms import QuestionForm, CompanyForm, VehicleForm
+from .models import QuestionTemplate, Company, Vehicle
 from .utils import model_view_create, model_view_update, model_view_delete
+from datetime import datetime, timezone
 
 
 def home(request: HttpRequest):
-    return render(request, 'main/home.html')
+    context = {}
+    if request.user.profile.position_type == 1 or request.user.profile.position_type == 2:
+        context = {
+            'vehicles': Vehicle.objects.all()
+        }
+    return render(request, 'main/home.html', context=context)
 
 
 ### company
 
 @login_required
+@require_http_methods(['GET'])
 def create_company(request: HttpRequest):
     res = model_view_create(request, CompanyForm)
 
@@ -30,8 +37,9 @@ def create_company(request: HttpRequest):
 
 
 @login_required
-def update_company(request: HttpRequest, question_id: int):
-    res = model_view_update(request, CompanyForm, question_id)
+@require_http_methods(['GET'])
+def update_company(request: HttpRequest, model_id: int):
+    res = model_view_update(request, CompanyForm, model_id)
 
     if isinstance(res, HttpResponse):
         return res
@@ -39,32 +47,87 @@ def update_company(request: HttpRequest, question_id: int):
     context = {
         'title': 'Update Company',
         'ok_button_text': 'Update',
-        'company': res.instance,
+        'model': res.instance,
         'form': res
     }
-    return render(request, 'main/question.html', context=context)
+    return render(request, 'main/company.html', context=context)
 
 
 @login_required
-def delete_company(request: HttpRequest, question_id: int):
-    return model_view_delete(request, Company, question_id)
+@require_http_methods(['GET'])
+def delete_company(request: HttpRequest, model_id: int):
+    return model_view_delete(request, Company, model_id)
 
 
 @login_required
+@require_http_methods(['GET'])
 def companies(request: HttpRequest):
     if request.user.profile.position_type < 3:
         return HttpResponseForbidden("You haven't got the rank to view this page")
     context = {
-        'companies': Company.objects.all()
+        'models': Company.objects.all()
     }
     return render(request, 'main/companies.html', context=context)
 
 
-### checklist questions
+### vehicles
 
 @login_required
+@require_http_methods(['GET'])
+def create_vehicle(request: HttpRequest):
+    res = model_view_create(request, VehicleForm)
+
+    if isinstance(res, HttpResponse):
+        return res
+
+    context = {
+        'title': 'Create Vehicle',
+        'ok_button_text': 'Create',
+        'form': res
+    }
+    return render(request, 'main/vehicle.html', context=context)
+
+
+@login_required
+@require_http_methods(['GET'])
+def update_vehicle(request: HttpRequest, model_id: int):
+    res = model_view_update(request, VehicleForm, model_id)
+
+    if isinstance(res, HttpResponse):
+        return res
+
+    context = {
+        'title': 'Update Vehicle',
+        'ok_button_text': 'Update',
+        'model': res.instance,
+        'form': res
+    }
+    return render(request, 'main/vehicle.html', context=context)
+
+
+@login_required
+@require_http_methods(['GET'])
+def delete_vehicle(request: HttpRequest, model_id: int):
+    return model_view_delete(request, Vehicle, model_id)
+
+
+@login_required
+@require_http_methods(['GET'])
+def vehicles(request: HttpRequest):
+    if request.user.profile.position_type < 3:
+        return HttpResponseForbidden("You haven't got the rank to view this page")
+    context = {
+        'models': Vehicle.objects.all()
+    }
+    return render(request, 'main/vehicles.html', context=context)
+
+
+### questions
+
+@login_required
+@require_http_methods(['GET'])
 def create_question(request: HttpRequest):
-    res = model_view_create(request, ChecklistQuestionForm)
+    res = model_view_create(request, QuestionForm)
 
     if isinstance(res, HttpResponse):
         return res
@@ -78,8 +141,9 @@ def create_question(request: HttpRequest):
 
 
 @login_required
-def update_question(request: HttpRequest, question_id: int):
-    res = model_view_update(request, ChecklistQuestionForm, question_id)
+@require_http_methods(['GET'])
+def update_question(request: HttpRequest, model_id: int):
+    res = model_view_update(request, QuestionForm, model_id)
 
     if isinstance(res, HttpResponse):
         return res
@@ -87,24 +151,26 @@ def update_question(request: HttpRequest, question_id: int):
     context = {
         'title': 'Update Question',
         'ok_button_text': 'Update',
-        'question': res.instance,
-        #'url_name': ChecklistQuestionTemplate.url_name,
+        'model': res.instance,
+        #'url_name': QuestionTemplate.url_name,
         'form': res
     }
     return render(request, 'main/question.html', context=context)
 
 
 @login_required
-def delete_question(request: HttpRequest, question_id: int):
-    return model_view_delete(request, ChecklistQuestionTemplate, question_id)
+@require_http_methods(['GET'])
+def delete_question(request: HttpRequest, model_id: int):
+    return model_view_delete(request, QuestionTemplate, model_id)
 
 
 @login_required
+@require_http_methods(['GET'])
 def questions(request: HttpRequest):
     if request.user.profile.position_type < 3:
         return HttpResponseForbidden("You haven't got the rank to view this page")
     context = {
-        'questions': ChecklistQuestionTemplate.objects.all()
+        'models': QuestionTemplate.objects.all()
     }
     return render(request, 'main/questions.html', context=context)
 
@@ -157,6 +223,40 @@ def api_multiple(request: HttpRequest, url_name: str):
         except Exception as err:
             return HttpResponseBadRequest(str(err))
     return HttpResponseServerError(f'The method "{request.method}" is not supported in this path')
+
+
+### answer questions
+
+@login_required
+@require_http_methods(['GET'])
+def questions_answer(request: HttpRequest):
+    vehicle_ids = request.GET.get('vehicle_ids', None)
+    if vehicle_ids is None:
+        vehicles = Vehicle.objects.all()
+    elif isinstance(vehicle_ids, int):
+        if not Vehicle.objects.filter(id=vehicle_ids).exists():
+            return HttpResponseNotFound(f'No vehicle found with id = {vehicle_ids}')
+        vehicles = [Vehicle.objects.get(id=vehicle_ids)]
+    elif isinstance(vehicle_ids, list):
+        if not Vehicle.objects.filter(id__in=vehicle_ids).exists():
+            return HttpResponseNotFound(f'No vehicle found with ids = {vehicle_ids}')
+        vehicles = Vehicle.objects.get(id__in=vehicle_ids)
+
+    questions = {}
+    for vehicle in vehicles:
+        # https://stackoverflow.com/questions/2218327/django-manytomany-filter
+        pos_type_questions = QuestionTemplate.objects.filter(position_type=request.user.profile.position_type)
+        if QuestionTemplate.objects.filter(vehicles=vehicle).exists():
+            questions[vehicle.id] = [(question, question.should_be_instantiated(now_utc=datetime.now(timezone=timezone.utc)[0])) for question in pos_type_questions.filter(vehicles__id=vehicle.id).all()]
+    
+    context = {
+        'vehicles': vehicles,
+        'questions': questions
+    }
+
+    return render(request, 'main/questions_answer_list', context=context)
+
+
 
 
 ### utils views

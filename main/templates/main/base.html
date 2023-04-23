@@ -15,27 +15,35 @@
             {% if user.is_authenticated %}
                 {% with position_type=user.profile.position_type %}
                     {% if position_type == 1 %} {# driver #}
+                    <li><strong>Available Questions</strong>
+                        <ul>
+                            <li><a href="{% url 'main-question' %}">All questions</a></li>
+                            <li><strong>By vehicle</strong>
+                                <ul>
+                                    {% for vehicle in vehicles %}
+                                    <li><a href="{% url '' %}"></a></li>
+                                    {% endfor %}
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
                     {% endif %}
                     {% if position_type == 2 %} {# mechanic #}
                     {% endif %}
                     {% if position_type >= 3 %} {# admin and su #}
-                    <li><strong>Checklists</strong>
+                    <li><strong>Questions</strong>
                         <ul>
-                            <li><a href="{% url 'main-question' %}">Checklist question list</a></li>
+                            <li><a href="{% url 'main-question' %}">Question list</a></li>
                         </ul>
                     </li>
                     <li><strong>Vehicles</strong>
                         <ul>
-                            <li><a href="#">Create vehicle</a></li>
-                            <li><a href="#">Edit vehicle</a></li>
-                            <li><a href="#">Vehicle info</a></li>
+                            <li><a href="{% url 'main-vehicle' %}">Vehicles</a></li>
                         </ul>
                     </li>
                     <li><strong>Companies</strong>
                         <ul>
-                            <li><a href="#">Create company</a></li>
-                            <li><a href="#">Edit company</a></li>
-                            <li><a href="#">Company info</a></li>
+                            <li><a href="{% url 'main-company' %}">Companies</a></li>
                         </ul>
                     </li>
                     {% endif %}

@@ -45,12 +45,9 @@ def model_view_update(request: HttpRequest, form_cls: type[forms.ModelForm], mod
     if not model_cls.objects.filter(id=model_id).exists():
         return HttpResponseNotFound(f'The {form.Meta.model.__name__} with id {model_id} was not found')
     model = model_cls.objects.get(id=model_id)
-    print('PAPA')
     if request.method == 'POST':
-        print('CHAPA')
         form = form_cls(request.POST, instance=model)
         if form.is_valid():
-            print('CHIPI')
             form.save()
             messages.success(request, f'Created {form.instance.__class__.__name__}!')
             print(request.GET.get('next', 'main-home'))

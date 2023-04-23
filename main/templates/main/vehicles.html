@@ -4,14 +4,14 @@
 {% load static %}
 
 {% block content %}
-<h1>Questions List</h1>
+<h1>Vehicles List</h1>
 <div>
     <ul>
         {% for model in models %}
-        <li><a href="{% url 'main-question_update' model_id=model.id %}?next={% url 'main-question' %}">{{ model.question }}</a></li>
+        <li><a href="{% url 'main-vehicle_update' model_id=model.id %}?next={% url 'main-vehicle' %}">{{ model.name }}</a></li>
         {% endfor %}
     </ul>
 </div>
-<a href="{% url 'main-question_add' %}?next={% url 'main-question' %}">Add</a>
+<a href="{% url 'main-vehicle_add' %}?next={% url 'main-vehicle' %}">Add</a>
 
 {% endblock content %}
