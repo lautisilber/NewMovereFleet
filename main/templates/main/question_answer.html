@@ -1,12 +1,9 @@
 {% extends "main/base.html" %}
 
 {# Without the static tag, static files cannot be used #}
-{% load static %}
+{# {% load static%} #}
 
 {% block content %}
-
-{# Without the static tag, static files cannot be used #}
-{# {% load static%} #}
 
 <h1>{{ title }}</h1>
 <div>
@@ -41,8 +38,8 @@
         </div>
     </form>
 </div>
-{% if model %}
-<a href="{% url 'main-vehicle_delete' model_id=model.id %}?next={% url 'main-vehicle' %}">Delete</a>
+{% if question_instance %}
+<a href="{% url 'main-question_delete' model_id=model.id %}?next={% url 'main-question' %}">Delete</a>
 {% endif %}
 
 {% endblock content %}

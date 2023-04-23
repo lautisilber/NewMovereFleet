@@ -6,7 +6,7 @@ from django.db.models import signals
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    info = models.CharField(max_length=128, null=True)
+    info = models.CharField(max_length=128, null=True, blank=True)
 
     class PositionType(models.IntegerChoices):
         NOT_ASSIGNED = 0, gettext_lazy('Not assigned')

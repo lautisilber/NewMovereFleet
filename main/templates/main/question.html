@@ -1,7 +1,7 @@
 {% extends "main/base.html" %}
 
 {# Without the static tag, static files cannot be used #}
-{% load static %}
+{# {% load static%} #}
 
 {% block content %}
 
@@ -40,6 +40,13 @@
 </div>
 {% if model %}
 <a href="{% url 'main-question_delete' model_id=model.id %}?next={% url 'main-question' %}">Delete</a>
+{% endif %}
+
+{% if set_input_dates_now %}
+    {# Without the static tag, static files cannot be used #}
+    {% load static %}
+
+    <script src="{% static 'main/js/set_dates_now.js' %}"></script>
 {% endif %}
 
 {% endblock content %}

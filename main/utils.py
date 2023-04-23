@@ -50,7 +50,6 @@ def model_view_update(request: HttpRequest, form_cls: type[forms.ModelForm], mod
         if form.is_valid():
             form.save()
             messages.success(request, f'Created {form.instance.__class__.__name__}!')
-            print(request.GET.get('next', 'main-home'))
             return redirect(request.GET.get('next', 'main-home'))
     else:
         form = form_cls(instance=model)

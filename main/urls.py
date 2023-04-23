@@ -20,6 +20,9 @@ urlpatterns = [
     path('question/<int:model_id>/', views.update_question, name='main-question_update'),
     path('question/delete/<int:model_id>/', views.delete_question, name='main-question_delete'),
 
+    path('questions_answer/', views.questions_answer, name='main-questions_answer'),
+    path('question_answer/<int:question_template_id>', views.question_answer, name='main-question_answer'),
+
     #path('api/<str:url_name>/<int:model_id>/', views.api_single, name='api-single'),
     #path('api/<str:url_name>/', views.api_multiple, name='api-multiple'),
 

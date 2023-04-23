@@ -11,6 +11,7 @@ from datetime import datetime, timedelta, timezone
 class Company(models.Model):
     url_name = 'company'
     name = models.CharField(max_length=64, null=False)
+    info = models.CharField(max_length=256, null=True, blank=True)
 
     def __str__(self) -> str:
         return f'Company(name={self.name})'
@@ -53,10 +54,11 @@ class QuestionTemplate(QuestionBase):
     periodicity_days_notice = models.IntegerField(default=1, null=False, blank=True) # cuantos dias de changui para la persona que complete
     position_type = models.SmallIntegerField(choices=Profile.PositionType.choices, default=Profile.PositionType.NOT_ASSIGNED, null=False) # TODO: no anda
 
-    def should_be_instantiated(self, now_utc=Optional[datetime]) -> tuple[bool, int]:
-        if now is None:
-            now = datetime.now(timezone=timezone.utc)
-        dt_absolute = now - self.periodicity_anchor
+    def should_be_instantiated(self, now_utc: Optional[datetime]=None) -> tuple[bool, int]:
+        if now_utc is None:
+            now_utc = datetime.now(timezone.utc)
+        now_utc = now_utc.date()
+        dt_absolute = now_utc - self.periodicity_anchor
         dt_absolute_days = dt_absolute.days
 
         if self.periodicity_days <= 0:
@@ -73,12 +75,17 @@ class QuestionTemplate(QuestionBase):
 
 class QuestionInstance(QuestionBase):
     url_name = 'checklist_question_instance'
-    checklist_question_template = models.ForeignKey(QuestionTemplate, models.SET_NULL, null=True)
+    question_template = models.ForeignKey(QuestionTemplate, models.SET_NULL, null=True, blank=False)
+    user = models.ForeignKey(User, models.SET_NULL, null=True, blank=False)
     answer = models.BooleanField(null=True, default=None)
     notes = models.TextField(null=True)
 
     def __str__(self) -> str:
         return f'QuestionInstance(id={self.id}, title={self.title}, answer={self.answer})'
+
+def create_question_instance(quesiton_template: QuestionTemplate, user: Optional[User]) -> QuestionInstance:
+    question_instance = QuestionInstance(question_template=quesiton_template, user=user)
+    return question_instance
 
 ### PARTS ###
 

@@ -3,25 +3,26 @@ from django.http import HttpResponse, HttpRequest, HttpResponseForbidden, HttpRe
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods
 from django.contrib import messages
-from .forms import QuestionForm, CompanyForm, VehicleForm
-from .models import QuestionTemplate, Company, Vehicle
+from .forms import QuestionAnswerForm, QuestionForm, CompanyForm, VehicleForm
+from .models import QuestionInstance, QuestionTemplate, Company, Vehicle, create_question_instance
 from .utils import model_view_create, model_view_update, model_view_delete
 from datetime import datetime, timezone
 
 
 def home(request: HttpRequest):
     context = {}
-    if request.user.profile.position_type == 1 or request.user.profile.position_type == 2:
-        context = {
-            'vehicles': Vehicle.objects.all()
-        }
+    if request.user.is_authenticated:
+        if request.user.profile.position_type == 1 or request.user.profile.position_type == 2:
+            context = {
+                'vehicles': Vehicle.objects.all()
+            }
     return render(request, 'main/home.html', context=context)
 
 
 ### company
 
 @login_required
-@require_http_methods(['GET'])
+@require_http_methods(['GET', 'POST'])
 def create_company(request: HttpRequest):
     res = model_view_create(request, CompanyForm)
 
@@ -37,7 +38,7 @@ def create_company(request: HttpRequest):
 
 
 @login_required
-@require_http_methods(['GET'])
+@require_http_methods(['GET', 'POST'])
 def update_company(request: HttpRequest, model_id: int):
     res = model_view_update(request, CompanyForm, model_id)
 
@@ -73,7 +74,7 @@ def companies(request: HttpRequest):
 ### vehicles
 
 @login_required
-@require_http_methods(['GET'])
+@require_http_methods(['GET', 'POST'])
 def create_vehicle(request: HttpRequest):
     res = model_view_create(request, VehicleForm)
 
@@ -89,7 +90,7 @@ def create_vehicle(request: HttpRequest):
 
 
 @login_required
-@require_http_methods(['GET'])
+@require_http_methods(['GET', 'POST'])
 def update_vehicle(request: HttpRequest, model_id: int):
     res = model_view_update(request, VehicleForm, model_id)
 
@@ -106,7 +107,7 @@ def update_vehicle(request: HttpRequest, model_id: int):
 
 
 @login_required
-@require_http_methods(['GET'])
+@require_http_methods(['GET', 'POST'])
 def delete_vehicle(request: HttpRequest, model_id: int):
     return model_view_delete(request, Vehicle, model_id)
 
@@ -125,7 +126,7 @@ def vehicles(request: HttpRequest):
 ### questions
 
 @login_required
-@require_http_methods(['GET'])
+@require_http_methods(['GET', 'POST'])
 def create_question(request: HttpRequest):
     res = model_view_create(request, QuestionForm)
 
@@ -135,13 +136,14 @@ def create_question(request: HttpRequest):
     context = {
         'title': 'Create Question',
         'ok_button_text': 'Create',
+        'set_input_dates_now': True,
         'form': res
     }
     return render(request, 'main/question.html', context=context)
 
 
 @login_required
-@require_http_methods(['GET'])
+@require_http_methods(['GET', 'POST'])
 def update_question(request: HttpRequest, model_id: int):
     res = model_view_update(request, QuestionForm, model_id)
 
@@ -152,6 +154,7 @@ def update_question(request: HttpRequest, model_id: int):
         'title': 'Update Question',
         'ok_button_text': 'Update',
         'model': res.instance,
+        'set_input_dates_now': True,
         #'url_name': QuestionTemplate.url_name,
         'form': res
     }
@@ -159,7 +162,7 @@ def update_question(request: HttpRequest, model_id: int):
 
 
 @login_required
-@require_http_methods(['GET'])
+@require_http_methods(['GET', 'POST'])
 def delete_question(request: HttpRequest, model_id: int):
     return model_view_delete(request, QuestionTemplate, model_id)
 
@@ -175,7 +178,75 @@ def questions(request: HttpRequest):
     return render(request, 'main/questions.html', context=context)
 
 
+### answer questions
+
+@login_required
+@require_http_methods(['GET'])
+def questions_answer(request: HttpRequest):
+    if request.user.profile.position_type not in (1, 2):
+        return HttpResponseForbidden("You can't view this page because you aren't a driver or a mechanic")
+    vehicle_id = None
+    if 'vehicle_id' in request.GET:
+        vehicle_id = [request.GET['vehicle_id']]
+    elif 'vehicle_id[]' in request.GET:
+        vehicle_id = request.GET.getlist('vehicle_id[]')
+    if vehicle_id is None:
+        vehicles = Vehicle.objects.all()
+    else:
+        if not all(p.isdigit() for p in vehicle_id):
+            return HttpResponseBadRequest('Not all vehicle ids were integers')
+        vehicles = Vehicle.objects.filter(id__in=vehicle_id)
+
+    questions = {}
+    for vehicle in vehicles:
+        # https://stackoverflow.com/questions/2218327/django-manytomany-filter
+        pos_type_questions = QuestionTemplate.objects.filter(position_type=request.user.profile.position_type)
+        now_utc = datetime.now(timezone.utc)
+        if QuestionTemplate.objects.filter(vehicles=vehicle).exists():
+            questions[vehicle.id] = [(question, question.should_be_instantiated(now_utc=now_utc)[0]) for question in pos_type_questions.filter(vehicles__id=vehicle.id).all()]
+    
+    context = {
+        'vehicles': vehicles,
+        'questions': questions
+    }
+
+    print(vehicles)
+    print(questions)
+
+    return render(request, 'main/questions_answer.html', context=context)
+
+
+@login_required
+@require_http_methods(['GET', 'POST'])
+def question_answer(request: HttpRequest, question_template_id: int):
+    if request.user.profile.position_type not in (1, 2):
+        return HttpResponseForbidden("You can't view this page because you aren't a driver or a mechanic")
+    now_utc = datetime.now(timezone.utc)
+    pos_type_questions = QuestionTemplate.objects.filter(position_type=request.user.profile.position_type)
+    answerable_questions = [question for question in pos_type_questions if question.should_be_instantiated(now_utc)[0]]
+    if not any(question.id == question_template_id for question in answerable_questions):
+        return HttpResponseNotFound(f'No answerable question exists with the id {question_template_id}')
+    question_template = next(question for question in answerable_questions if question.id == question_template_id)
+    print(question_template, type(question_template), question_template.id)
+    question_instance = create_question_instance(quesiton_template=question_template, user=request.user)
+
+    if request.method == 'POST':
+        form = QuestionAnswerForm(request.POST, instance=question_instance)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Answered question {question_template.question}!')
+            return redirect(request.GET.get('next', 'main-home'))
+    else:
+        form = QuestionAnswerForm(instance=question_instance)
+    
+    context = {
+        'form': form
+    }
+    return render(request, 'main/question_answer.html', context=context)
+    
+
 ### api
+
 from main.utils import get_all_nonabstract_models_from_module
 api_models = get_all_nonabstract_models_from_module('main.models') | get_all_nonabstract_models_from_module('user.models')
 
@@ -223,40 +294,6 @@ def api_multiple(request: HttpRequest, url_name: str):
         except Exception as err:
             return HttpResponseBadRequest(str(err))
     return HttpResponseServerError(f'The method "{request.method}" is not supported in this path')
-
-
-### answer questions
-
-@login_required
-@require_http_methods(['GET'])
-def questions_answer(request: HttpRequest):
-    vehicle_ids = request.GET.get('vehicle_ids', None)
-    if vehicle_ids is None:
-        vehicles = Vehicle.objects.all()
-    elif isinstance(vehicle_ids, int):
-        if not Vehicle.objects.filter(id=vehicle_ids).exists():
-            return HttpResponseNotFound(f'No vehicle found with id = {vehicle_ids}')
-        vehicles = [Vehicle.objects.get(id=vehicle_ids)]
-    elif isinstance(vehicle_ids, list):
-        if not Vehicle.objects.filter(id__in=vehicle_ids).exists():
-            return HttpResponseNotFound(f'No vehicle found with ids = {vehicle_ids}')
-        vehicles = Vehicle.objects.get(id__in=vehicle_ids)
-
-    questions = {}
-    for vehicle in vehicles:
-        # https://stackoverflow.com/questions/2218327/django-manytomany-filter
-        pos_type_questions = QuestionTemplate.objects.filter(position_type=request.user.profile.position_type)
-        if QuestionTemplate.objects.filter(vehicles=vehicle).exists():
-            questions[vehicle.id] = [(question, question.should_be_instantiated(now_utc=datetime.now(timezone=timezone.utc)[0])) for question in pos_type_questions.filter(vehicles__id=vehicle.id).all()]
-    
-    context = {
-        'vehicles': vehicles,
-        'questions': questions
-    }
-
-    return render(request, 'main/questions_answer_list', context=context)
-
-
 
 
 ### utils views

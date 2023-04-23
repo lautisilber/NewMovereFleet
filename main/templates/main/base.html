@@ -17,11 +17,11 @@
                     {% if position_type == 1 %} {# driver #}
                     <li><strong>Available Questions</strong>
                         <ul>
-                            <li><a href="{% url 'main-question' %}">All questions</a></li>
+                            <li><a href="{% url 'main-questions_answer' %}">All questions</a></li>
                             <li><strong>By vehicle</strong>
                                 <ul>
                                     {% for vehicle in vehicles %}
-                                    <li><a href="{% url '' %}"></a></li>
+                                    <li><a href="{% url 'main-questions_answer' %}?vehicle_ids={{ vehicle.id }}">{{ vehicle.name }}</a></li>
                                     {% endfor %}
                                 </ul>
                             </li>
