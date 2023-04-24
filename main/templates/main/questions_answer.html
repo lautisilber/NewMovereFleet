@@ -14,15 +14,15 @@
 <h1>Questions List</h1>
 <div>
     <ul>
-        {% for vehicle in vehicles %}
+        {% for vehicle in vehicles_questions %}
         <li><strong>{{ vehicle.name }}</strong></li>
         <ul>
             {% for question in questions|dict_index:vehicle.id %}
                 <li>
                     {% if question.1 %}
-                    <a href="{% url 'main-question_answer' question_template_id=question.0.id %}">{{ question.0.question }}</a>
+                    <a href="{% url 'main-question_answer' vehicle_id=vehicle.id question_template_id=question.0.id %}">{{ question.0.question }}</a>
                     {% else %}
-                    <a href="{% url 'main-question_answer' question_template_id=question.0.id %}" class="disabled-link">{{ question.0.question }}</a>
+                    <a href="{% url 'main-question_answer' vehicle_id=vehicle.id question_template_id=question.0.id %}" class="disabled-link">{{ question.0.question }}</a>
                     {% endif %}
                 </li>
             {% endfor %}

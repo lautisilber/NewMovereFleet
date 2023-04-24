@@ -21,7 +21,7 @@
                             <li><strong>By vehicle</strong>
                                 <ul>
                                     {% for vehicle in vehicles %}
-                                    <li><a href="{% url 'main-questions_answer' %}?vehicle_ids={{ vehicle.id }}">{{ vehicle.name }}</a></li>
+                                    <li><a href="{% url 'main-questions_answer' %}?vehicle_id={{ vehicle.id }}">{{ vehicle.name }}</a></li>
                                     {% endfor %}
                                 </ul>
                             </li>

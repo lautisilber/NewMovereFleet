@@ -45,6 +45,7 @@ class QuestionForm(forms.ModelForm):
 class QuestionAnswerForm(forms.ModelForm):
     error_css_class = 'form-error'
     required_css_class = 'form-required'
+    answer_confirm = forms.BooleanField(help_text='Have you read the questions and answered conciously?', initial=False, required=True)
 
     class Meta:
         model = QuestionInstance

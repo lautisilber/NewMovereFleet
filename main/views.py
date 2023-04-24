@@ -196,6 +196,7 @@ def questions_answer(request: HttpRequest):
         if not all(p.isdigit() for p in vehicle_id):
             return HttpResponseBadRequest('Not all vehicle ids were integers')
         vehicles = Vehicle.objects.filter(id__in=vehicle_id)
+    print(vehicle_id, 'hi')
 
     questions = {}
     for vehicle in vehicles:
@@ -205,30 +206,33 @@ def questions_answer(request: HttpRequest):
         if QuestionTemplate.objects.filter(vehicles=vehicle).exists():
             questions[vehicle.id] = [(question, question.should_be_instantiated(now_utc=now_utc)[0]) for question in pos_type_questions.filter(vehicles__id=vehicle.id).all()]
     
+    vehicles = [v for v in vehicles if v.id in questions]
     context = {
-        'vehicles': vehicles,
+        'vehicles': Vehicle.objects.all(),
+        'vehicles_questions': vehicles,
         'questions': questions
     }
-
-    print(vehicles)
-    print(questions)
 
     return render(request, 'main/questions_answer.html', context=context)
 
 
 @login_required
 @require_http_methods(['GET', 'POST'])
-def question_answer(request: HttpRequest, question_template_id: int):
+def question_answer(request: HttpRequest, vehicle_id: int, question_template_id: int):
     if request.user.profile.position_type not in (1, 2):
         return HttpResponseForbidden("You can't view this page because you aren't a driver or a mechanic")
+    if not Vehicle.objects.filter(id=vehicle_id).exists():
+        return HttpResponseNotFound(f'No vehicle with id {vehicle_id} found')
+    vehicle = Vehicle.objects.get(id=vehicle_id)
     now_utc = datetime.now(timezone.utc)
     pos_type_questions = QuestionTemplate.objects.filter(position_type=request.user.profile.position_type)
     answerable_questions = [question for question in pos_type_questions if question.should_be_instantiated(now_utc)[0]]
     if not any(question.id == question_template_id for question in answerable_questions):
         return HttpResponseNotFound(f'No answerable question exists with the id {question_template_id}')
     question_template = next(question for question in answerable_questions if question.id == question_template_id)
-    print(question_template, type(question_template), question_template.id)
-    question_instance = create_question_instance(quesiton_template=question_template, user=request.user)
+    if not question_template.vehicles.filter(id=vehicle_id):
+        return HttpResponseNotFound(f'The template question with id {question_template_id} is not related to the vehicle with id {vehicle_id}')
+    question_instance = create_question_instance(quesiton_template=question_template, vehicle=vehicle, user=request.user)
 
     if request.method == 'POST':
         form = QuestionAnswerForm(request.POST, instance=question_instance)
@@ -240,7 +244,10 @@ def question_answer(request: HttpRequest, question_template_id: int):
         form = QuestionAnswerForm(instance=question_instance)
     
     context = {
-        'form': form
+        'form': form,
+        'ok_button_text': 'Submit Answer',
+        'question': question_template.question,
+        'vehicle': vehicle.name
     }
     return render(request, 'main/question_answer.html', context=context)
     

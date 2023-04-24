@@ -6,6 +6,15 @@ from django.utils.translation import gettext_lazy
 from datetime import datetime, timedelta, timezone
 
 
+
+class TimeStampMixin(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        abstract = True
+
+
 ### MACRO ###
 
 class Company(models.Model):
@@ -73,18 +82,19 @@ class QuestionTemplate(QuestionBase):
         return f'ChecklistQuestionTemplate(id={self.id}, question={self.question})'
 
 
-class QuestionInstance(QuestionBase):
+class QuestionInstance(QuestionBase, TimeStampMixin):
     url_name = 'checklist_question_instance'
     question_template = models.ForeignKey(QuestionTemplate, models.SET_NULL, null=True, blank=False)
+    vehicle = models.ForeignKey(Vehicle, models.SET_NULL, null=True, blank=False)
     user = models.ForeignKey(User, models.SET_NULL, null=True, blank=False)
-    answer = models.BooleanField(null=True, default=None)
-    notes = models.TextField(null=True)
+    answer = models.BooleanField(null=False, default=None)
+    notes = models.TextField(null=True, blank=True)
 
     def __str__(self) -> str:
-        return f'QuestionInstance(id={self.id}, title={self.title}, answer={self.answer})'
+        return f'QuestionInstance(id={self.id}, title={self.question_template.question if self.question_template else "None"}, answer={self.answer})'
 
-def create_question_instance(quesiton_template: QuestionTemplate, user: Optional[User]) -> QuestionInstance:
-    question_instance = QuestionInstance(question_template=quesiton_template, user=user)
+def create_question_instance(quesiton_template: QuestionTemplate, vehicle: Vehicle, user: User) -> QuestionInstance:
+    question_instance = QuestionInstance(question_template=quesiton_template, vehicle=vehicle, user=user)
     return question_instance
 
 ### PARTS ###

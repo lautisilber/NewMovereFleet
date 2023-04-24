@@ -5,7 +5,8 @@
 
 {% block content %}
 
-<h1>{{ title }}</h1>
+<h1>{{ question }}</h1>
+<h3>Vehicle: {{ vehicle }}</h3>
 <div>
     <form method="POST" enctype="multipart/form-data">
         {% csrf_token %}
@@ -38,6 +39,31 @@
         </div>
     </form>
 </div>
+<script>
+    const info = document.getElementById('id_notes');
+    const answer = document.getElementById('id_answer');
+
+    function allowInfo(val){
+        if (val) {
+            info.setAttribute('disabled', 'true');
+        } else {
+            info.removeAttribute('disabled');
+        }
+    }
+
+    allowInfo(answer.checked);
+    answer.addEventListener('change', () => {
+        allowInfo(answer.checked)
+    });
+
+    function onSubmit(e) {
+        e.preventDefault();
+        if (answer.checked) {
+            info.value = '';
+        }
+        document.getElementsByTagName('form')[0].requestSubmit();
+    }
+</script>
 {% if question_instance %}
 <a href="{% url 'main-question_delete' model_id=model.id %}?next={% url 'main-question' %}">Delete</a>
 {% endif %}
