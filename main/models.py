@@ -19,7 +19,7 @@ class TimeStampMixin(models.Model):
 
 class Company(models.Model):
     url_name = 'company'
-    name = models.CharField(max_length=64, null=False)
+    name = models.CharField(max_length=64, null=False, unique=True)
     info = models.CharField(max_length=256, null=True, blank=True)
 
     def __str__(self) -> str:
@@ -48,15 +48,12 @@ class Vehicle(models.Model):
 
 ### QUESTIONS ###
 
-class QuestionBase(models.Model):
-    class Meta:
-        abstract = True
-    question = models.CharField(max_length=32, null=False)
-    info = models.CharField(max_length=256, null=True, blank=True)
-
-
-class QuestionTemplate(QuestionBase):
+class QuestionTemplate(models.Model):
     url_name = 'checklist_question_template'
+
+    question = models.CharField(max_length=32, null=False, blank=False)
+    info = models.CharField(max_length=256, null=True, blank=True)
+    allow_notes = models.BooleanField(default=False, null=False, blank=True)
     vehicles = models.ManyToManyField(Vehicle, blank=True, null=True)
     periodicity_days = models.IntegerField(default=0, null=False, blank=True) # cada cuantos dias debe ser completado. 0 significa que debe ser administrado por la persona que complete
     periodicity_anchor = models.DateField(null=True, blank=True) # a day to start counting from. if the periodicity is daily (periodicity_days = 0) this has no effect
@@ -79,15 +76,17 @@ class QuestionTemplate(QuestionBase):
         return instantiate, n_instances
 
     def __str__(self) -> str:
-        return f'ChecklistQuestionTemplate(id={self.id}, question={self.question})'
+        return f'ChecklistQuestionTemplate(id={self.id}, question="{self.question}", allow_notes={self.allow_notes})'
 
 
-class QuestionInstance(QuestionBase, TimeStampMixin):
+class QuestionInstance(TimeStampMixin):
     url_name = 'checklist_question_instance'
+
     question_template = models.ForeignKey(QuestionTemplate, models.SET_NULL, null=True, blank=False)
     vehicle = models.ForeignKey(Vehicle, models.SET_NULL, null=True, blank=False)
     user = models.ForeignKey(User, models.SET_NULL, null=True, blank=False)
     answer = models.BooleanField(null=False, default=None)
+    problem_description = models.TextField(null=True, blank=True)
     notes = models.TextField(null=True, blank=True)
 
     def __str__(self) -> str:

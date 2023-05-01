@@ -15,7 +15,7 @@
 
             {{ form.non_field_errors }}
 
-            {% for hidden_field in c_form.hidden_fields %}
+            {% for hidden_field in form.hidden_fields %}
             {{ hidden_field.errors }}
             {{ hidden_field }}
             {% endfor %}
@@ -40,26 +40,26 @@
     </form>
 </div>
 <script>
-    const info = document.getElementById('id_notes');
+    const problem_description = document.getElementById('id_problem_description');
     const answer = document.getElementById('id_answer');
 
-    function allowInfo(val){
+    function allowProblemDescription(val){
         if (val) {
-            info.setAttribute('disabled', 'true');
+            problem_description.setAttribute('disabled', 'true');
         } else {
-            info.removeAttribute('disabled');
+            problem_description.removeAttribute('disabled');
         }
     }
 
-    allowInfo(answer.checked);
+    allowProblemDescription(answer.checked);
     answer.addEventListener('change', () => {
-        allowInfo(answer.checked)
+        allowProblemDescription(answer.checked)
     });
 
     function onSubmit(e) {
         e.preventDefault();
         if (answer.checked) {
-            info.value = '';
+            problem_description.value = '';
         }
         document.getElementsByTagName('form')[0].requestSubmit();
     }

@@ -1,14 +1,11 @@
 {% extends "main/base.html" %}
 
 {# Without the static tag, static files cannot be used #}
-{% load static %}
+{# {% load static%} #}
 
 {% block content %}
 
-{# Without the static tag, static files cannot be used #}
-{# {% load static%} #}
-
-<h1>{{ title }}</h1>
+<h1>Answer for {{ form.instance.question_template.question }}</h1>
 <div>
     <form method="POST" enctype="multipart/form-data">
         {% csrf_token %}
@@ -36,13 +33,7 @@
             </table>
 
         </fieldset>
-        <div class="form-group">
-            <button class="btn btn-outline-info" type="submit">{{ ok_button_text }}</button>
-        </div>
     </form>
 </div>
-{% if model %}
-<a href="{% url 'main-vehicle_delete' model_id=model.id %}?next={% url 'main-vehicle' %}">Delete</a>
-{% endif %}
 
-{% endblock content %}
+{% endblock %}

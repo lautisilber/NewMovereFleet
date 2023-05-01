@@ -139,7 +139,7 @@ def create_question(request: HttpRequest):
         'set_input_dates_now': True,
         'form': res
     }
-    return render(request, 'main/question.html', context=context)
+    return render(request, 'main/question_edit.html', context=context)
 
 
 @login_required
@@ -158,7 +158,7 @@ def update_question(request: HttpRequest, model_id: int):
         #'url_name': QuestionTemplate.url_name,
         'form': res
     }
-    return render(request, 'main/question.html', context=context)
+    return render(request, 'main/question_edit.html', context=context)
 
 
 @login_required
@@ -175,7 +175,49 @@ def questions(request: HttpRequest):
     context = {
         'models': QuestionTemplate.objects.all()
     }
-    return render(request, 'main/questions.html', context=context)
+    return render(request, 'main/questions_edit.html', context=context)
+
+
+@login_required
+@require_http_methods(['GET'])
+def answers(request: HttpRequest):
+    if request.user.profile.position_type < 3:
+        return HttpResponseForbidden("You haven't got the rank to view this page")
+    # TODO: apply filters though query parameters
+    answer_instances = QuestionInstance.objects.all()
+    vehicles_ids = set()
+    answer_instances_without_vehicle = []
+    for answer_instance in answer_instances:
+        if answer_instance.vehicle:
+            vehicles_ids.add(answer_instance.vehicle.id)
+        else:
+            answer_instances_without_vehicle.append(answer_instance)
+    answer_instances = {}
+    if vehicles_ids:
+        vehicles = Vehicle.objects.filter(id__in=vehicles_ids).all()
+        for vehicle in vehicles:
+            answer_instances[vehicle.name] = vehicle.questioninstance_set.all()
+    context = {
+        'answer_instances': answer_instances,
+        'answer_instances_without_vehicle': answer_instances_without_vehicle
+    }
+    return render(request, 'main/answers.html', context=context)
+
+
+@login_required
+@require_http_methods(['GET'])
+def answer(request: HttpRequest, answer_id: int):
+    if request.user.profile.position_type < 3:
+        return HttpResponseForbidden("You haven't got the rank to view this page")
+    if not QuestionInstance.objects.filter(id=answer_id).exists():
+        return HttpResponseNotFound(f'The QuestionInstance with id {answer_id} was not found')
+    answer = QuestionInstance.objects.get(id=answer_id)
+    form = QuestionAnswerForm(instance=answer, readonly=True)
+    context = {
+        'form': form
+    }
+    return render(request, 'main/answer.html', context=context)
+
 
 
 ### answer questions
@@ -196,7 +238,6 @@ def questions_answer(request: HttpRequest):
         if not all(p.isdigit() for p in vehicle_id):
             return HttpResponseBadRequest('Not all vehicle ids were integers')
         vehicles = Vehicle.objects.filter(id__in=vehicle_id)
-    print(vehicle_id, 'hi')
 
     questions = {}
     for vehicle in vehicles:

@@ -20,6 +20,9 @@ urlpatterns = [
     path('question/<int:model_id>/', views.update_question, name='main-question_update'),
     path('question/delete/<int:model_id>/', views.delete_question, name='main-question_delete'),
 
+    path('answers/', views.answers, name='main-answers'),
+    path('answer/<int:answer_id>/', views.answer, name='main-answer'),
+
     path('questions_answer/', views.questions_answer, name='main-questions_answer'),
     path('question_answer/<int:vehicle_id>/<int:question_template_id>', views.question_answer, name='main-question_answer'),
 

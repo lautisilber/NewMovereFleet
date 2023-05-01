@@ -1,0 +1,31 @@
+{% extends "main/base.html" %}
+
+{# Without the static tag, static files cannot be used #}
+{# {% load static%} #}
+{% load index %}
+
+{% block content %}
+<h1>Questions List</h1>
+<div>
+    <ul>
+        {% for vehicle in answer_instances %}
+            <li><strong>{{ vehicle }}</strong>
+                <ul>
+                    {% for answer_instance in answer_instances|dict_index:vehicle %}
+                    <li><a href="{% url 'main-answer' answer_id=answer_instance.id %}">{{ answer_instance.question_template.question }}</a></li>
+                    {% endfor %}
+                </ul>
+            </li>
+        {% endfor %}
+        {% if answer_instances_without_vehicle %}
+        <li><strong>Answers without vehicle</strong>
+            <ul>
+                {% for answer_instance in answer_instances_without_vehicle %}
+                <li><a href="{% url 'main-answer' answer_id=answer_instance.id %}">{{ answer_instance.question_template.question }}</a></li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </ul>
+</div>
+
+{% endblock content %}
