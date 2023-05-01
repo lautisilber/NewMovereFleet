@@ -17,11 +17,11 @@
                     {% if position_type == 1 %} {# driver #}
                     <li><strong>Available Questions</strong>
                         <ul>
-                            <li><a href="{% url 'main-questions_answer' %}">All questions</a></li>
+                            {#<li><a href="{% url 'main-questions_answer' %}">All questions</a></li>#}
                             <li><strong>By vehicle</strong>
                                 <ul>
                                     {% for vehicle in vehicles %}
-                                    <li><a href="{% url 'main-questions_answer' %}?vehicle_id={{ vehicle.id }}">{{ vehicle.name }}</a></li>
+                                    <li><a href="{% url 'main-answer_session' vehicle_id=vehicle.id page=0 %}">{{ vehicle.name }}</a></li>
                                     {% endfor %}
                                 </ul>
                             </li>
@@ -34,7 +34,12 @@
                     <li><strong>Questions</strong>
                         <ul>
                             <li><a href="{% url 'main-question' %}">Question list</a></li>
-                            <li><a href="{% url 'main-answers' %}">Answers</a></li>
+                            <li>Answers
+                                <ul>
+                                    <li><a href="{% url 'main-answers' %}">All Answers</a></li>
+                                    <li><a href="{% url 'main-answers' %}?time=today">Today's Answers</a></li>
+                                </ul>
+                            </li>
                         </ul>
                     </li>
                     <li><strong>Vehicles</strong>
@@ -55,12 +60,20 @@
                 {% endwith %}
                 <li><a href="{% url 'user-profile' %}">Profile</a></li>
                 <li><a href="{% url 'user-logout' %}?next={% url 'main-home' %}">Log Out</a></li>
+
             {% else %}
                 <li><a href="{% url 'user-login' %}">Log In</a></li>
                 <li><a href="{% url 'user-register' %}">Register</a></li>
             {% endif %}
         </ul>
     </nav>
+    {% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
     {% block content %}{% endblock %}
 
 </body>

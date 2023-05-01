@@ -5,14 +5,14 @@
 {% load index %}
 
 {% block content %}
-<h1>Questions List</h1>
+<h1>{{ title }}</h1>
 <div>
     <ul>
         {% for vehicle in answer_instances %}
             <li><strong>{{ vehicle }}</strong>
                 <ul>
                     {% for answer_instance in answer_instances|dict_index:vehicle %}
-                    <li><a href="{% url 'main-answer' answer_id=answer_instance.id %}">{{ answer_instance.question_template.question }}</a></li>
+                    <li><a href="{% url 'main-answer' answer_id=answer_instance.id %}">{{ answer_instance.question }}</a></li>
                     {% endfor %}
                 </ul>
             </li>
@@ -21,7 +21,7 @@
         <li><strong>Answers without vehicle</strong>
             <ul>
                 {% for answer_instance in answer_instances_without_vehicle %}
-                <li><a href="{% url 'main-answer' answer_id=answer_instance.id %}">{{ answer_instance.question_template.question }}</a></li>
+                <li><a href="{% url 'main-answer' answer_id=answer_instance.id %}">{{ answer_instance.question }}</a></li>
                 {% endfor %}
             </ul>
         {% endif %}

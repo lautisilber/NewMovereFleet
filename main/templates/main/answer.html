@@ -5,7 +5,7 @@
 
 {% block content %}
 
-<h1>Answer for {{ form.instance.question_template.question }}</h1>
+<h1>Answer for {{ form.instance.question }}</h1>
 <div>
     <form method="POST" enctype="multipart/form-data">
         {% csrf_token %}

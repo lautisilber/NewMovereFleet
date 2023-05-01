@@ -1,9 +1,10 @@
-from typing import Optional
+from typing import Any, Optional
 from django.db import models
 from django.contrib.auth.models import User
 from user.models import Profile
 from django.utils.translation import gettext_lazy
 from datetime import datetime, timedelta, timezone
+from django.db.models import signals
 
 
 
@@ -48,6 +49,15 @@ class Vehicle(models.Model):
 
 ### QUESTIONS ###
 
+
+class QuestionAnswerSession(TimeStampMixin):
+    user = models.ForeignKey(User, models.CASCADE, null=False, blank=False)
+    vehicle = models.ForeignKey(Vehicle, models.CASCADE, null=False, blank=False)
+
+    def __str__(self) -> str:
+        return f'QuestionAnswerSession(question_template_ids={[qt.id for qt in self.questiontemplate_set.all()]}, question_instance_ids={[qi.id for qi in self.questioninstance_set.all()]})'
+
+
 class QuestionTemplate(models.Model):
     url_name = 'checklist_question_template'
 
@@ -59,6 +69,8 @@ class QuestionTemplate(models.Model):
     periodicity_anchor = models.DateField(null=True, blank=True) # a day to start counting from. if the periodicity is daily (periodicity_days = 0) this has no effect
     periodicity_days_notice = models.IntegerField(default=1, null=False, blank=True) # cuantos dias de changui para la persona que complete
     position_type = models.SmallIntegerField(choices=Profile.PositionType.choices, default=Profile.PositionType.NOT_ASSIGNED, null=False) # TODO: no anda
+
+    answer_session = models.ManyToManyField(QuestionAnswerSession, blank=True, null=True)
 
     def should_be_instantiated(self, now_utc: Optional[datetime]=None) -> tuple[bool, int]:
         if now_utc is None:
@@ -78,10 +90,16 @@ class QuestionTemplate(models.Model):
     def __str__(self) -> str:
         return f'ChecklistQuestionTemplate(id={self.id}, question="{self.question}", allow_notes={self.allow_notes})'
 
+def get_answerable_question_templates(user: User, vehicle: Vehicle, now_utc: Optional[datetime]=None):
+    question_templates = QuestionTemplate.objects.filter(position_type=user.profile.position_type)
+    question_templates = [question_template for question_template in question_templates if question_template.should_be_instantiated(now_utc=now_utc)[0]]
+    return question_templates
+
 
 class QuestionInstance(TimeStampMixin):
     url_name = 'checklist_question_instance'
 
+    question = models.CharField(max_length=32, null=False, blank=False)
     question_template = models.ForeignKey(QuestionTemplate, models.SET_NULL, null=True, blank=False)
     vehicle = models.ForeignKey(Vehicle, models.SET_NULL, null=True, blank=False)
     user = models.ForeignKey(User, models.SET_NULL, null=True, blank=False)
@@ -89,12 +107,35 @@ class QuestionInstance(TimeStampMixin):
     problem_description = models.TextField(null=True, blank=True)
     notes = models.TextField(null=True, blank=True)
 
+    answer_session = models.ForeignKey(QuestionAnswerSession, models.SET_NULL, null=True, blank=True)
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        if self.question_template:
+            self.question = self.question_template.question
+
     def __str__(self) -> str:
         return f'QuestionInstance(id={self.id}, title={self.question_template.question if self.question_template else "None"}, answer={self.answer})'
 
-def create_question_instance(quesiton_template: QuestionTemplate, vehicle: Vehicle, user: User) -> QuestionInstance:
-    question_instance = QuestionInstance(question_template=quesiton_template, vehicle=vehicle, user=user)
+def create_question_instance(question_template: QuestionTemplate, vehicle: Vehicle, user: User) -> QuestionInstance:
+    question_instance = QuestionInstance(question_template=question_template, vehicle=vehicle, user=user)
     return question_instance
+
+def add_question_instance_to_session(answer_session: QuestionAnswerSession, question_template: QuestionTemplate) -> QuestionInstance:
+    question_instance = create_question_instance(question_template, answer_session.vehicle, answer_session.user)
+    question_instance.answer_session = answer_session
+    return question_instance
+
+
+def delete_question_template(sender, instance, using, **kwargs):
+    QuestionAnswerSession.objects.filter(questiontemplate__id=instance.id).delete()
+
+def delete_question_instance(sender, instance, using, **kwargs):
+    QuestionAnswerSession.objects.filter(questioninstance__id=instance.id).delete()
+
+signals.pre_delete.connect(delete_question_template, sender=QuestionTemplate, weak=False, dispatch_uid='main.models.delete_question_template')
+signals.pre_delete.connect(delete_question_instance, sender=QuestionInstance, weak=False, dispatch_uid='main.models.delete_question_instance')
+
 
 ### PARTS ###
 

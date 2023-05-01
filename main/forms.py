@@ -39,7 +39,7 @@ class QuestionForm(forms.ModelForm):
 
     class Meta:
         model = QuestionTemplate
-        fields = '__all__' #['question', 'info', 'vehicles', 'periodicity_days', 'periodicity_days_notice', 'position_type']
+        fields = ['question', 'info', 'allow_notes', 'vehicles', 'periodicity_days', 'periodicity_anchor', 'periodicity_days_notice', 'position_type']
         widgets = {
             'periodicity_anchor': forms.DateInput(attrs={'type': 'date'})
         }

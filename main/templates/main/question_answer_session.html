@@ -5,8 +5,8 @@
 
 {% block content %}
 
-<h1>{{ question }}</h1>
-<h3>Vehicle: {{ vehicle }}</h3>
+<h1>{{ vehicle.name }}</h1>
+<h3>Question: {{ form.instance.question }}</h3>
 <div>
     <form method="POST" enctype="multipart/form-data">
         {% csrf_token %}
@@ -35,7 +35,7 @@
 
         </fieldset>
         <div class="form-group">
-            <button class="btn btn-outline-info" type="submit">{{ ok_button_text }}</button>
+            <button class="btn btn-outline-info" type="submit">Next {{ curr_page|add:1 }}/{{ last_page|add:1 }}</button>
         </div>
     </form>
 </div>
