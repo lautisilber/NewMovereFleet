@@ -1,0 +1,12 @@
+{% extends "main/base.html" %}
+
+{# Without the static tag, static files cannot be used #}
+{# {% load static%} #}
+
+{% block content %}
+<h1>Checklist Questions List</h1>
+<li><a href="{% url 'main-answer_session' vehicle_id=vehicle.id session_type=0 page=0 %}">{{ vehicle.name }} - Generic</a></li>
+<li><a href="{% url 'main-answer_session' vehicle_id=vehicle.id session_type=1 page=0 %}">{{ vehicle.name }} - Get On</a></li>
+<li><a href="{% url 'main-answer_session' vehicle_id=vehicle.id session_type=2 page=0 %}">{{ vehicle.name }} - Get Off</a></li>
+
+{% endblock content %}

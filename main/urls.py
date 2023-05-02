@@ -5,12 +5,10 @@ from . import views
 urlpatterns = [
     path('', views.home, name='main-home'),
 
-    path('company/', views.companies, name='main-company'),
     path('company/add/', views.create_company, name='main-company_add'),
     path('company/<int:model_id>/', views.update_company, name='main-company_update'),
     path('company/<int:model_id>/delete/', views.delete_company, name='main-company_delete'),
 
-    path('vehicle/', views.vehicles, name='main-vehicle'),
     path('vehicle/add/', views.create_vehicle, name='main-vehicle_add'),
     path('vehicle/<int:model_id>/', views.update_vehicle, name='main-vehicle_update'),
     path('vehicle/<int:model_id>/delete/', views.delete_vehicle, name='main-vehicle_delete'),
@@ -25,6 +23,7 @@ urlpatterns = [
 
     # path('questions_answer/', views.questions_answer, name='main-questions_answer'),
     # path('question_answer/<int:vehicle_id>/<int:question_template_id>', views.question_answer, name='main-question_answer'),
+    path('answer_session_portal/<int:vehicle_id>', views.questions_answer_portal, name='main-answer_session_potral'),
     path('answer_session/<int:vehicle_id>/<int:session_type>/<int:page>', views.questions_answer_session, name='main-answer_session'),
 
     #path('api/<str:url_name>/<int:model_id>/', views.api_single, name='api-single'),

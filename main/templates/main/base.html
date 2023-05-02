@@ -3,72 +3,108 @@
 <html>
 
 <head>
-    <link rel="stylesheet" href="{% static 'main/css/skeleton.css' %}">
+    <link rel="stylesheet" href="{% static 'main/css/bulma.min.css' %}">
     {% block header %}{% endblock %}
 </head>
 
 <body>
-    <nav>
-        <ul>
-            <li><a href="{% url 'main-home' %}"><strong>MovereFleet</strong></a></li>
-        </ul>
-        <ul>
+    <nav class="navbar has-background-light" role="navigation" aria-label="main navigation">
+        <div class="navbar-brand">
+            <a class="navbar-item" href="{% url 'main-home' %}"><strong>MovereFleet</strong></a>
+        </div>
+        <div class="navbar-menu">
             {% if user.is_authenticated %}
+            <div class="navbar-start">
                 {% with position_type=user.profile.position_type %}
                     {% if position_type == 1 %} {# driver #}
-                    <li><strong>Available Questions</strong>
-                        <ul>
-                            {#<li><a href="{% url 'main-questions_answer' %}">All questions</a></li>#}
-                            <li><strong>By vehicle</strong>
-                                <ul>
-                                    {% for vehicle in vehicles %}
-                                    <li><a href="{% url 'main-answer_session' vehicle_id=vehicle.id session_type=0 page=0 %}">{{ vehicle.name }} - Generic</a></li>
-                                    <li><a href="{% url 'main-answer_session' vehicle_id=vehicle.id session_type=1 page=0 %}">{{ vehicle.name }} - Get On</a></li>
-                                    <li><a href="{% url 'main-answer_session' vehicle_id=vehicle.id session_type=2 page=0 %}">{{ vehicle.name }} - Get Off</a></li>
-                                    {% endfor %}
-                                </ul>
-                            </li>
-                        </ul>
-                    </li>
+                    <div class="navbar-item has-dropdown is-hoverable">
+                        <a class="navbar-link">
+                            Available Questions
+                        </a>
+                        {% for vehicle in base_vehicles %}
+                        <div class="navbar-dropdown">
+                            <a href="{% url 'main-answer_session_potral' vehicle_id=vehicle.id %}">{{ vehicle.name }}</a>
+                        </div>
+                        {% endfor %}
+                    </div>
                     {% endif %}
                     {% if position_type == 2 %} {# mechanic #}
                     {% endif %}
                     {% if position_type >= 3 %} {# admin and su #}
-                    <li><strong>Questions</strong>
-                        <ul>
-                            <li><a href="{% url 'main-question' %}">Question list</a></li>
-                            <li>Answers
-                                <ul>
-                                    <li><a href="{% url 'main-answers' %}">All Answers</a></li>
-                                    <li><a href="{% url 'main-answers' %}?time=today">Today's Answers</a></li>
-                                </ul>
-                            </li>
-                        </ul>
-                    </li>
-                    <li><strong>Vehicles</strong>
-                        <ul>
-                            <li><a href="{% url 'main-vehicle' %}">Vehicles</a></li>
-                        </ul>
-                    </li>
-                    <li><strong>Companies</strong>
-                        <ul>
-                            <li><a href="{% url 'main-company' %}">Companies</a></li>
-                        </ul>
-                    </li>
+                    <div class="navbar-item has-dropdown is-hoverable">
+                        <a class="navbar-link">
+                            Questions
+                        </a>
+
+                        <div class="navbar-dropdown">
+                            <a class="navbar-item" href="{% url 'main-answers' %}">All Answers</a>
+                            <a class="navbar-item" href="{% url 'main-answers' %}?time=today">Today's Answers</a>
+                        </div>
+                    </div>
+
+                    <div class="navbar-item has-dropdown is-hoverable">
+                        <a class="navbar-link">
+                            Vehicles
+                        </a>
+
+                        <div class="navbar-dropdown">
+                            {% for vehicle in base_vehicles %}
+                            <a class="navbar-item" href="{% url 'main-vehicle_update' model_id=vehicle.id %}">{{ vehicle.name }}</a>
+                            {% endfor %}
+                            <hr class="navbar-divider">
+                            <a class="navbar-item" href="{% url 'main-vehicle_add' %}">Add</a>
+                        </div>
+                    </div>
+
+                    <div class="navbar-item has-dropdown is-hoverable">
+                        <a class="navbar-link">
+                            Companies
+                        </a>
+
+                        <div class="navbar-dropdown">
+                            {% for company in base_companies %}
+                            <a class="navbar-item" href="{% url 'main-company_update' model_id=company.id %}">{{ company.name }}</a>
+                            {% endfor %}
+                            <hr class="navbar-divider">
+                            <a class="navbar-item" href="{% url 'main-company_add' %}">Add</a>
+                        </div>
+                    </div>
+
                     {% endif %}
                     {% if position_type == 4 %} {# su #}
-                    <li><a href="{% url 'admin:index' %}">Admin</a></li>
+                    <a class="navbar-item" href="{% url 'admin:index' %}">Admin</a>
                     {% endif %}
-                    <li>-</li>
                 {% endwith %}
-                <li><a href="{% url 'user-profile' %}">Profile</a></li>
-                <li><a href="{% url 'user-logout' %}?next={% url 'main-home' %}">Log Out</a></li>
+            </div>
 
+            <div class="navbar-end">
+                <div class="navbar-item">
+                    <div class="buttons">
+                        <a class="button is-light" href="{% url 'user-login' %}">
+                            Profile
+                        </a>
+                        <a class="button is-danger" href="{% url 'user-logout' %}?next={% url 'main-home' %}">
+                            <strong>Log Out</strong>
+                        </a>
+                    </div>
+                </div>
+            </div>
             {% else %}
-                <li><a href="{% url 'user-login' %}">Log In</a></li>
-                <li><a href="{% url 'user-register' %}">Register</a></li>
+            <div class="navbar-start"></div>
+            <div class="navbar-end">
+                <div class="navbar-item">
+                    <div class="buttons">
+                        <a class="button is-light" href="{% url 'user-login' %}">
+                            Log in
+                        </a>
+                        <a class="button is-primary" href="{% url 'user-register' %}">
+                            <strong>Sign Up</strong>
+                        </a>
+                    </div>
+                </div>
+            </div>
             {% endif %}
-        </ul>
+        </div>
     </nav>
     {% if messages %}
     <ul class="messages">

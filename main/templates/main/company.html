@@ -39,7 +39,7 @@
     </form>
 </div>
 {% if model %}
-<a href="{% url 'main-company_delete' model_id=model.id %}?next={% url 'main-company' %}">Delete</a>
+<a href="{% url 'main-company_delete' model_id=model.id %}">Delete</a>
 {% endif %}
 
 {% endblock content %}

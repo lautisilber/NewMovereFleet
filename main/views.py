@@ -1,3 +1,4 @@
+from typing import Any
 from django.shortcuts import redirect, render
 from django.http import HttpResponse, HttpRequest, HttpResponseForbidden, HttpResponseNotFound, HttpResponseBadRequest, JsonResponse, HttpResponseServerError
 from django.contrib.auth.decorators import login_required
@@ -9,13 +10,25 @@ from .utils import model_view_create, model_view_update, model_view_delete
 from datetime import datetime, timedelta, timezone
 
 
-def home(request: HttpRequest):
+
+def load_navbar_context(request: HttpRequest) -> dict[str, Any]:
     context = {}
     if request.user.is_authenticated:
         if request.user.profile.position_type == 1 or request.user.profile.position_type == 2:
             context = {
-                'vehicles': Vehicle.objects.all()
+                'base_vehicles': Vehicle.objects.all()
             }
+        elif request.user.profile.position_type >= 3:
+            print('hi', Vehicle.objects.all())
+            context = {
+                'base_vehicles': Vehicle.objects.all(),
+                'base_companies': Company.objects.all()
+            }
+    return context
+
+
+def home(request: HttpRequest):
+    context = load_navbar_context(request)
     return render(request, 'main/home.html', context=context)
 
 
@@ -34,6 +47,7 @@ def create_company(request: HttpRequest):
         'ok_button_text': 'Create',
         'form': res
     }
+    context.update(load_navbar_context(request))
     return render(request, 'main/company.html', context=context)
 
 
@@ -51,6 +65,7 @@ def update_company(request: HttpRequest, model_id: int):
         'model': res.instance,
         'form': res
     }
+    context.update(load_navbar_context(request))
     return render(request, 'main/company.html', context=context)
 
 
@@ -58,17 +73,6 @@ def update_company(request: HttpRequest, model_id: int):
 @require_http_methods(['GET'])
 def delete_company(request: HttpRequest, model_id: int):
     return model_view_delete(request, Company, model_id)
-
-
-@login_required
-@require_http_methods(['GET'])
-def companies(request: HttpRequest):
-    if request.user.profile.position_type < 3:
-        return HttpResponseForbidden("You haven't got the rank to view this page")
-    context = {
-        'models': Company.objects.all()
-    }
-    return render(request, 'main/companies.html', context=context)
 
 
 ### vehicles
@@ -86,6 +90,7 @@ def create_vehicle(request: HttpRequest):
         'ok_button_text': 'Create',
         'form': res
     }
+    context.update(load_navbar_context(request))
     return render(request, 'main/vehicle.html', context=context)
 
 
@@ -103,6 +108,7 @@ def update_vehicle(request: HttpRequest, model_id: int):
         'model': res.instance,
         'form': res
     }
+    context.update(load_navbar_context(request))
     return render(request, 'main/vehicle.html', context=context)
 
 
@@ -110,17 +116,6 @@ def update_vehicle(request: HttpRequest, model_id: int):
 @require_http_methods(['GET', 'POST'])
 def delete_vehicle(request: HttpRequest, model_id: int):
     return model_view_delete(request, Vehicle, model_id)
-
-
-@login_required
-@require_http_methods(['GET'])
-def vehicles(request: HttpRequest):
-    if request.user.profile.position_type < 3:
-        return HttpResponseForbidden("You haven't got the rank to view this page")
-    context = {
-        'models': Vehicle.objects.all()
-    }
-    return render(request, 'main/vehicles.html', context=context)
 
 
 ### questions
@@ -139,6 +134,7 @@ def create_question(request: HttpRequest):
         'set_input_dates_now': True,
         'form': res
     }
+    context.update(load_navbar_context(request))
     return render(request, 'main/question_edit.html', context=context)
 
 
@@ -158,6 +154,7 @@ def update_question(request: HttpRequest, model_id: int):
         #'url_name': QuestionTemplate.url_name,
         'form': res
     }
+    context.update(load_navbar_context(request))
     return render(request, 'main/question_edit.html', context=context)
 
 
@@ -175,6 +172,7 @@ def questions(request: HttpRequest):
     context = {
         'models': QuestionTemplate.objects.all()
     }
+    context.update(load_navbar_context(request))
     return render(request, 'main/questions_edit.html', context=context)
 
 
@@ -208,6 +206,7 @@ def answers(request: HttpRequest):
         'answer_instances_without_vehicle': answer_instances_without_vehicle,
         'title': title
     }
+    context.update(load_navbar_context(request))
     return render(request, 'main/answers.html', context=context)
 
 
@@ -223,11 +222,27 @@ def answer(request: HttpRequest, answer_id: int):
     context = {
         'form': form
     }
+    context.update(load_navbar_context(request))
     return render(request, 'main/answer.html', context=context)
 
 
 
 ### answer questions
+
+@login_required
+@require_http_methods(['GET'])
+def questions_answer_portal(request: HttpRequest, vehicle_id: int):
+    if request.user.profile.position_type not in (1, 2):
+        return HttpResponseForbidden("You can't view this page because you aren't a driver or a mechanic")
+    if not Vehicle.objects.filter(id=vehicle_id).exists():
+        return HttpResponseBadRequest(f'No vehicle was found with id {vehicle_id}')
+    vehicle = Vehicle.objects.get(id=vehicle_id)
+    context = {
+        'vehicle': vehicle
+    }
+    context.update(load_navbar_context(request))
+    return render(request, 'main/question_answer_portal.html', context=context)
+
 
 @login_required
 @require_http_methods(['GET', 'POST'])
@@ -266,6 +281,7 @@ def questions_answer_session(request: HttpRequest, vehicle_id: int, session_type
         'curr_page': page,
         'last_page': len(question_templates)-1
     }
+    context.update(load_navbar_context(request))
     if request.method == 'POST':
         form = QuestionAnswerForm(request.POST, instance=question_instance)
         context['form'] = form
@@ -344,4 +360,5 @@ def test(request:HttpRequest):
     context = {
         'user_info': True
     }
+    context.update(load_navbar_context(request))
     return render(request, 'main/test.html', context=context)
