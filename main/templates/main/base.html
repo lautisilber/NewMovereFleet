@@ -1,8 +1,9 @@
-{% load static%}
+{% load static %}
 <!DOCTYPE html>
 <html>
 
 <head>
+    <link rel="stylesheet" href="{% static 'main/css/skeleton.css' %}">
     {% block header %}{% endblock %}
 </head>
 
@@ -21,7 +22,9 @@
                             <li><strong>By vehicle</strong>
                                 <ul>
                                     {% for vehicle in vehicles %}
-                                    <li><a href="{% url 'main-answer_session' vehicle_id=vehicle.id page=0 %}">{{ vehicle.name }}</a></li>
+                                    <li><a href="{% url 'main-answer_session' vehicle_id=vehicle.id session_type=0 page=0 %}">{{ vehicle.name }} - Generic</a></li>
+                                    <li><a href="{% url 'main-answer_session' vehicle_id=vehicle.id session_type=1 page=0 %}">{{ vehicle.name }} - Get On</a></li>
+                                    <li><a href="{% url 'main-answer_session' vehicle_id=vehicle.id session_type=2 page=0 %}">{{ vehicle.name }} - Get Off</a></li>
                                     {% endfor %}
                                 </ul>
                             </li>

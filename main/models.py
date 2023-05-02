@@ -49,13 +49,26 @@ class Vehicle(models.Model):
 
 ### QUESTIONS ###
 
+class QuestionType(models.IntegerChoices):
+    GENERIC = 0, gettext_lazy('Generic')
+    GET_ON = 1, gettext_lazy('Get on')
+    GET_OFF = 2, gettext_lazy('Get off')
+
+    @classmethod
+    def get_type_from_int(cls, n: int):
+        if n == 1:
+            return cls.GET_ON
+        elif n == 2:
+            return cls.GET_OFF
+        return cls.GENERIC
 
 class QuestionAnswerSession(TimeStampMixin):
     user = models.ForeignKey(User, models.CASCADE, null=False, blank=False)
     vehicle = models.ForeignKey(Vehicle, models.CASCADE, null=False, blank=False)
+    session_type = models.SmallIntegerField(choices=QuestionType.choices, default=QuestionType.GENERIC, null=False)
 
     def __str__(self) -> str:
-        return f'QuestionAnswerSession(question_template_ids={[qt.id for qt in self.questiontemplate_set.all()]}, question_instance_ids={[qi.id for qi in self.questioninstance_set.all()]})'
+        return f'QuestionAnswerSession(question_template_ids={[qt.id for qt in self.questiontemplate_set.all()]}, question_instance_ids={[qi.id for qi in self.questioninstance_set.all()]}, session_type={self.session_type})'
 
 
 class QuestionTemplate(models.Model):
@@ -65,6 +78,7 @@ class QuestionTemplate(models.Model):
     info = models.CharField(max_length=256, null=True, blank=True)
     allow_notes = models.BooleanField(default=False, null=False, blank=True)
     vehicles = models.ManyToManyField(Vehicle, blank=True, null=True)
+    question_type = models.SmallIntegerField(choices=QuestionType.choices, default=QuestionType.GENERIC, null=False)
     periodicity_days = models.IntegerField(default=0, null=False, blank=True) # cada cuantos dias debe ser completado. 0 significa que debe ser administrado por la persona que complete
     periodicity_anchor = models.DateField(null=True, blank=True) # a day to start counting from. if the periodicity is daily (periodicity_days = 0) this has no effect
     periodicity_days_notice = models.IntegerField(default=1, null=False, blank=True) # cuantos dias de changui para la persona que complete
@@ -89,11 +103,6 @@ class QuestionTemplate(models.Model):
 
     def __str__(self) -> str:
         return f'ChecklistQuestionTemplate(id={self.id}, question="{self.question}", allow_notes={self.allow_notes})'
-
-def get_answerable_question_templates(user: User, vehicle: Vehicle, now_utc: Optional[datetime]=None):
-    question_templates = QuestionTemplate.objects.filter(position_type=user.profile.position_type)
-    question_templates = [question_template for question_template in question_templates if question_template.should_be_instantiated(now_utc=now_utc)[0]]
-    return question_templates
 
 
 class QuestionInstance(TimeStampMixin):
@@ -125,6 +134,14 @@ def add_question_instance_to_session(answer_session: QuestionAnswerSession, ques
     question_instance = create_question_instance(question_template, answer_session.vehicle, answer_session.user)
     question_instance.answer_session = answer_session
     return question_instance
+
+def create_answer_session(user: User, vehicle: Vehicle, session_type: int=QuestionType, now_utc: Optional[datetime]=None) -> QuestionAnswerSession:
+    question_templates = QuestionTemplate.objects.filter(position_type=user.profile.position_type, vehicle=vehicle, question_type=session_type).all()
+    question_templates = [question_template for question_template in question_templates if question_template.should_be_instantiated(now_utc=now_utc)[0]]
+    session = QuestionAnswerSession(user=user, vehicle=vehicle, session_type=session_type)
+    session.save() # for the relationships to work
+    session.questiontemplate_set.add(*question_templates)
+    return session
 
 
 def delete_question_template(sender, instance, using, **kwargs):

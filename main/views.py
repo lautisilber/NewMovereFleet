@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods
 from django.contrib import messages
 from .forms import QuestionAnswerForm, QuestionForm, CompanyForm, VehicleForm
-from .models import QuestionAnswerSession, QuestionInstance, QuestionTemplate, Company, Vehicle, add_question_instance_to_session, create_question_instance, get_answerable_question_templates
+from .models import QuestionAnswerSession, QuestionInstance, QuestionTemplate, Company, QuestionType, Vehicle, add_question_instance_to_session, create_answer_session
 from .utils import model_view_create, model_view_update, model_view_delete
 from datetime import datetime, timedelta, timezone
 
@@ -231,27 +231,26 @@ def answer(request: HttpRequest, answer_id: int):
 
 @login_required
 @require_http_methods(['GET', 'POST'])
-def questions_answer_session(request: HttpRequest, vehicle_id: int, page: int=0):
+def questions_answer_session(request: HttpRequest, vehicle_id: int, session_type: int, page: int=0):
     # answer pagination for a particular vehicle
     if request.user.profile.position_type not in (1, 2):
         return HttpResponseForbidden("You can't view this page because you aren't a driver or a mechanic")
     if not Vehicle.objects.filter(id=vehicle_id).exists():
         return HttpResponseBadRequest(f'No vehicle was found with id {vehicle_id}')
+    
+    session_type_cls = QuestionType.get_type_from_int(session_type)
 
     now_utc = datetime.now(timezone.utc)
     vehicle = Vehicle.objects.get(id=vehicle_id)
     active_session = None
-    if QuestionAnswerSession.objects.filter(vehicle=vehicle, user=request.user).exists():
+    if QuestionAnswerSession.objects.filter(vehicle=vehicle, user=request.user, session_type=session_type_cls).exists():
         active_session = QuestionAnswerSession.objects.get(vehicle=vehicle, user=request.user)
-        if now_utc - active_session.created_at > timedelta(days=1):
+        if now_utc - active_session.created_at > timedelta(minutes=10): # TODO: check if this should be more dynamic. maybe it depends on the session type?
             active_session.questioninstance_set.all().delete()
             active_session.delete()
             active_session = None
     if active_session is None:
-        active_session = QuestionAnswerSession(vehicle=vehicle, user=request.user)
-        active_session.save()
-        question_templates = get_answerable_question_templates(request.user, vehicle, now_utc)
-        active_session.questiontemplate_set.add(*question_templates)
+        active_session = create_answer_session(request.user, vehicle, session_type_cls, now_utc)
     
     question_templates = list(active_session.questiontemplate_set.order_by('id').all())
     if page >= len(question_templates):
@@ -274,7 +273,7 @@ def questions_answer_session(request: HttpRequest, vehicle_id: int, page: int=0)
             form.save()
             messages.success(request, f'Answered question {question_template.question}!')
             if page < len(question_templates)-1:
-                return redirect('main-answer_session', vehicle_id=vehicle.id, page=page+1)
+                return redirect('main-answer_session', vehicle_id=vehicle.id, session_type=session_type, page=page+1)
             # last page
             active_session.delete()
             return redirect(request.GET.get('next', 'main-home'))
