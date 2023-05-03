@@ -2,16 +2,85 @@
 
 {# Without the static tag, static files cannot be used #}
 {# {% load static%} #}
+{% load index %}
 
 {% block content %}
-<h1>Questions List</h1>
-<div>
-    <ul>
-        {% for model in models %}
-        <li><a href="{% url 'main-question_update' model_id=model.id %}?next={% url 'main-question' %}">{{ model.question }}</a></li>
-        {% endfor %}
-    </ul>
+<div class="container">
+    <table class="table">
+        <thead>
+            <tr>
+                <td><strong class="has-text-weight-semibold">Question</strong></td>
+                <td><strong class="has-text-weight-semibold">Vehicles</strong></td>
+                <td><strong class="has-text-weight-semibold">Edit</strong></td>
+                <td><strong class="has-text-weight-semibold">Delete</strong></td>
+            </tr>
+        </thead>
+        <tbody>
+            {% for model in models %}
+            <tr>
+                <td>{{ model.question }}</td>
+                <td>Vehicles</td>
+                <td><a href="{% url 'main-question_update' model_id=model.id %}?next={% url 'main-question' %}" class="button is-link is-outlined">Edit</a></td>
+                <td><button onclick="openDeleteModal({{ model.id }})" class="button is-danger is-outlined">Delete</button></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div>
+        <a href="{% url 'main-question_add' %}?next={% url 'main-question' %}" class="button is-primary">Add</a>
+    </div>
 </div>
-<a href="{% url 'main-question_add' %}?next={% url 'main-question' %}">Add</a>
+<div id="modal-delete" class="modal">
+    <div class="modal-background modal-closer"></div>
+    <div class="modal-content">
+        <header class="modal-card-head">
+            <p class="modal-card-title">Are you sure you want to delete &ldquo;<span id="modal-delete-title-question"></span>&rdquo;</p>
+            <button class="delete modal-closer" aria-label="close"></button>
+        </header>
+        <footer class="modal-card-foot">
+            <a class="button is-danger" id="delete-button">Delete</a>
+            <button class="button modal-closer">Cancel</button>
+        </footer>
+    </div>
+</div>
+
+<script>
+    const questions = {
+        {% for model in models %}
+        {{ model.id }}: '{{ model.question }}',
+        {% endfor %}
+    };
+    const questionDeleteLinks = {
+        {% for model in models %}
+        {{ model.id }}: "{% url 'main-question_delete' model_id=model.id %}?next={% url 'main-question' %}",
+        {% endfor %}
+    };
+    const modal = document.getElementById('modal-delete');
+    const deleteButton = document.getElementById('delete-button');
+    function openDeleteModal(question_id) {
+        document.getElementById('modal-delete-title-question').textContent = questions[question_id];
+        deleteButton.setAttribute('currentquestion', String(question_id));
+        modal.classList.add('is-active');
+    }
+    function closeModal() {
+        modal.classList.remove('is-active');
+    }
+    Array.prototype.forEach.call(document.getElementsByClassName('modal-closer'), function(event) {
+        event.addEventListener('click', function() {
+            closeModal();
+        });
+    });
+    deleteButton.addEventListener('click', function(event) {
+        const question_id = parseInt(event.target.getAttribute('currentquestion'));
+        location.replace(questionDeleteLinks[question_id]);
+    });
+    document.addEventListener('keydown', (event) => {
+        const e = event || window.event;
+        if (e.keyCode === 27) { // Escape key
+            closeModal();
+        }
+    });
+</script>
+
 
 {% endblock content %}

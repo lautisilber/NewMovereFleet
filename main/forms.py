@@ -9,12 +9,27 @@ from django.utils.translation import gettext_lazy
 from datetime import datetime, timezone
 
 
+def _bulma_text_input():
+    return forms.widgets.TextInput(attrs={'class': 'input'})
+
+def _bulma_number_input():
+    return forms.widgets.NumberInput(attrs={'class': 'input'})
+
+def _bulma_textarea():
+    return forms.widgets.Textarea(attrs={'class': 'input'})
+
 class CompanyForm(forms.ModelForm):
-    error_css_class = 'form-error'
-    required_css_class = 'form-required'
+    error_css_class = 'is-danger'
+    required_css_class = 'is-warning'
     class Meta:
         model = Company
         fields = ['name']
+        labels = {
+            'name': 'Name'
+        }
+        widgets = {
+            'name': _bulma_text_input()
+        }
 
 class VehicleForm(forms.ModelForm):
     error_css_class = 'form-error'
@@ -22,6 +37,17 @@ class VehicleForm(forms.ModelForm):
     class Meta:
         model = Vehicle
         fields = ['name', 'mileage', 'fuel', 'company']
+        labels = {
+            'name': 'Name',
+            'mileage': 'Mileage',
+            'fuel': 'Fuel',
+            'company': 'Company'
+        }
+        widgets = {
+            'name': _bulma_text_input(),
+            'mileage': _bulma_number_input(),
+            'fuel': _bulma_number_input(),
+        }
 
 
 # class DateInputNow(forms.DateInput):
@@ -40,8 +66,22 @@ class QuestionForm(forms.ModelForm):
     class Meta:
         model = QuestionTemplate
         fields = ['question', 'info', 'allow_notes', 'vehicles', 'periodicity_days', 'periodicity_anchor', 'periodicity_days_notice', 'position_type']
+        labels = {
+            'question': 'Question',
+            'info': 'Info',
+            'allow_notes': 'Allow notes',
+            'vehicles': 'Vehicles',
+            'periodicity_days': 'Periodicity days',
+            'periodicity_anchor': 'Periodicity anchor',
+            'periodicity_days_notice': 'Periodicity days notice',
+            'position_type': 'Position type'
+        }
         widgets = {
-            'periodicity_anchor': forms.DateInput(attrs={'type': 'date'})
+            'question': _bulma_text_input(),
+            'info': _bulma_text_input(),
+            'periodicity_days': _bulma_number_input(),
+            'periodicity_anchor': forms.DateInput(attrs={'type': 'date', 'class': 'input'}),
+            'periodicity_days_notice': _bulma_number_input()
         }
 
 

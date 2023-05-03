@@ -33,12 +33,23 @@
                     {% if position_type >= 3 %} {# admin and su #}
                     <div class="navbar-item has-dropdown is-hoverable">
                         <a class="navbar-link">
+                            Answers
+                        </a>
+                        
+                        <div class="navbar-dropdown">
+                            <a class="navbar-item" href="{% url 'main-answers' %}">All Answers</a>
+                            <a class="navbar-item" href="{% url 'main-answers' %}?time=today">Today's Answers</a>
+                        </div>
+                    </div>
+                    
+                    <div class="navbar-item has-dropdown is-hoverable">
+                        <a class="navbar-link">
                             Questions
                         </a>
 
                         <div class="navbar-dropdown">
-                            <a class="navbar-item" href="{% url 'main-answers' %}">All Answers</a>
-                            <a class="navbar-item" href="{% url 'main-answers' %}?time=today">Today's Answers</a>
+                            <a class="navbar-item" href="{% url 'main-question' %}">Edit Questions</a>
+                            <a class="navbar-item" href="{% url 'main-question_add' %}">Add</a>
                         </div>
                     </div>
 
@@ -80,10 +91,10 @@
             <div class="navbar-end">
                 <div class="navbar-item">
                     <div class="buttons">
-                        <a class="button is-light" href="{% url 'user-login' %}">
+                        <a class="button is-light" href="{% url 'user-profile' %}">
                             Profile
                         </a>
-                        <a class="button is-danger" href="{% url 'user-logout' %}?next={% url 'main-home' %}">
+                        <a class="button is-link" href="{% url 'user-logout' %}?next={% url 'main-home' %}">
                             <strong>Log Out</strong>
                         </a>
                     </div>
@@ -106,15 +117,25 @@
             {% endif %}
         </div>
     </nav>
-    {% if messages %}
-    <ul class="messages">
-        {% for message in messages %}
-        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-        {% endfor %}
-    </ul>
-    {% endif %}
+
+    {% for message in messages %}
+    <!-- <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li> -->
+    <br>
+    <div class="container">
+        <div class="box has-background-info has-text-white">{{ message }}</div>
+    </div>
+    {% endfor %}
+
+    <br>
     {% block content %}{% endblock %}
 
 </body>
+
+<footer>
+    <br>
+    <div class="container">
+        <small class="is-pulled-right">Version 0.1 &beta;</small>
+    </div>
+</footer>
 
 </html>
