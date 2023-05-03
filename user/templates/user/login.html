@@ -6,46 +6,48 @@
 
 {% block content %}
 <div class="container">
-    <h1>Log In</h1>
-    <form method="POST">
-        {% csrf_token %}
-        <br>
-        <fieldset class="form-group">
+    <div class="box">
+        <h1 class="title">Log In</h1>
+        <form method="POST">
+            {% csrf_token %}
             <br>
-
-            {{ form.non_field_errors }}
-
-            {% for hidden_field in form.hidden_fields %}
-            {{ hidden_field.errors }}
-            {{ hidden_field }}
-            {% endfor %}
-
-            {% for field in form.visible_fields %}
-            <div class="field">
-                <label class="label" for="{{ field.auto_id }}">{{ field.label }}</label>
+            <fieldset>
+                <br>
+    
+                {{ form.non_field_errors }}
+    
+                {% for hidden_field in form.hidden_fields %}
+                {{ hidden_field.errors }}
+                {{ hidden_field }}
+                {% endfor %}
+    
+                {% for field in form.visible_fields %}
+                <div class="field">
+                    <label class="label" for="{{ field.auto_id }}">{{ field.label }}</label>
+                    <div class="control">
+                        {% for error in field.errors %}
+                        <p class="help is-danger">{{ error }}</p>
+                        {% endfor %}
+                        {{ field }}
+                        {% if field.help_text %}
+                        <p class="help">{{ field.help_text }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </fieldset>
+            <br>
+            <div class="field is-grouped">
                 <div class="control">
-                    {% for error in field.errors %}
-                    <p class="help is-danger">{{ error }}</p>
-                    {% endfor %}
-                    {{ field }}
-                    {% if field.help_text %}
-                    <p class="help">{{ field.help_text }}</p>
-                    {% endif %}
+                    <button class="button is-link" type="submit">Log In</button>
                 </div>
             </div>
-            {% endfor %}
-        </fieldset>
-        <br>
-        <div class="field is-grouped">
-            <div class="control">
-                <button class="button is-link" type="submit">Log In</button>
-            </div>
+        </form>
+        <div class="container">
+            <small class="is-pulled-right">
+                Don't have and account? <a href="{% url 'user-register' %}">Sign Up</a>
+            </small>
         </div>
-    </form>
-    <div class="container">
-        <small class="is-pulled-right">
-            Don't have and account? <a href="{% url 'user-register' %}">Sign Up</a>
-        </small>
     </div>
 </div>
 {% endblock %}

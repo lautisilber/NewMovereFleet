@@ -1,22 +1,23 @@
 from typing import Any, Dict, Mapping, Optional, Type, Union
 from django import forms
-from django.core.files.base import File
-from django.db.models.base import Model
-from django.forms.utils import ErrorList
 from .models import QuestionInstance, QuestionTemplate, Company, Vehicle
-from user.models import Profile
 from django.utils.translation import gettext_lazy
 from datetime import datetime, timezone
 
 
 def _bulma_text_input():
-    return forms.widgets.TextInput(attrs={'class': 'input'})
+    return forms.widgets.TextInput(attrs={'class': 'input is-primary'})
 
 def _bulma_number_input():
-    return forms.widgets.NumberInput(attrs={'class': 'input'})
+    return forms.widgets.NumberInput(attrs={'class': 'input is-primary'})
 
-def _bulma_textarea():
-    return forms.widgets.Textarea(attrs={'class': 'input'})
+def _bulma_textarea(**attrs):
+    attrs['class'] = 'input is-primary'
+    return forms.widgets.Textarea(attrs=attrs)
+
+def _bulma_checkbox(**attrs):
+    attrs['class'] = 'is-checkradio'
+    return forms.widgets.CheckboxInput(attrs=attrs)
 
 class CompanyForm(forms.ModelForm):
     error_css_class = 'is-danger'
@@ -65,12 +66,13 @@ class QuestionForm(forms.ModelForm):
 
     class Meta:
         model = QuestionTemplate
-        fields = ['question', 'info', 'allow_notes', 'vehicles', 'periodicity_days', 'periodicity_anchor', 'periodicity_days_notice', 'position_type']
+        fields = ['question', 'info', 'allow_notes', 'vehicles', 'question_type', 'periodicity_days', 'periodicity_anchor', 'periodicity_days_notice', 'position_type']
         labels = {
             'question': 'Question',
             'info': 'Info',
             'allow_notes': 'Allow notes',
             'vehicles': 'Vehicles',
+            'question_type': 'Question type',
             'periodicity_days': 'Periodicity days',
             'periodicity_anchor': 'Periodicity anchor',
             'periodicity_days_notice': 'Periodicity days notice',
@@ -79,6 +81,7 @@ class QuestionForm(forms.ModelForm):
         widgets = {
             'question': _bulma_text_input(),
             'info': _bulma_text_input(),
+            'allow_notes': _bulma_checkbox(),
             'periodicity_days': _bulma_number_input(),
             'periodicity_anchor': forms.DateInput(attrs={'type': 'date', 'class': 'input'}),
             'periodicity_days_notice': _bulma_number_input()
@@ -99,12 +102,22 @@ class QuestionAnswerForm(forms.ModelForm):
             for field in self.fields.values():
                 field.disabled = True
         else:
-            self.fields['answer_confirm'] = forms.BooleanField(help_text='Have you read the questions and answered conciously?', initial=False, required=True)
+            self.fields['answer_confirm'] = forms.BooleanField(help_text='Have you read the questions and answered conciously?', initial=False, required=True, widget=_bulma_checkbox(confirm_read='true'))
 
-        allow_notes = self.instance.question_template.allow_notes
+        allow_notes = self.instance.question_template.allow_notes if self.instance.question_template else True
         if not allow_notes:
             self.fields['notes'].widget = self.fields['notes'].hidden_widget()
 
     class Meta:
         model = QuestionInstance
         fields = ['answer', 'problem_description', 'notes']
+        labels = {
+            'answer': 'Answer',
+            'problem_description': 'Problem description',
+            'notes': 'Notes'
+        }
+        widgets = {
+            'answer': _bulma_checkbox(),
+            'problem_description': _bulma_textarea(rows=3),
+            'notes': _bulma_textarea(rows=3)
+        }

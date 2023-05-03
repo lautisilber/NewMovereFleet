@@ -1,33 +1,46 @@
 {% extends "main/base.html" %}
 
 {# Without the static tag, static files cannot be used #}
-{# {% load static%} #}
+{% load static%}
 {% load index %}
+
+{% block header %}
+<link rel="stylesheet" href="{% static 'main/css/bulma-tooltip.min.css' %}">
+{% endblock %}
 
 {% block content %}
 <div class="container">
-    <table class="table">
-        <thead>
-            <tr>
-                <td><strong class="has-text-weight-semibold">Question</strong></td>
-                <td><strong class="has-text-weight-semibold">Vehicles</strong></td>
-                <td><strong class="has-text-weight-semibold">Edit</strong></td>
-                <td><strong class="has-text-weight-semibold">Delete</strong></td>
-            </tr>
-        </thead>
-        <tbody>
-            {% for model in models %}
-            <tr>
-                <td>{{ model.question }}</td>
-                <td>Vehicles</td>
-                <td><a href="{% url 'main-question_update' model_id=model.id %}?next={% url 'main-question' %}" class="button is-link is-outlined">Edit</a></td>
-                <td><button onclick="openDeleteModal({{ model.id }})" class="button is-danger is-outlined">Delete</button></td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    <div>
-        <a href="{% url 'main-question_add' %}?next={% url 'main-question' %}" class="button is-primary">Add</a>
+    <div class="box">
+        <table class="table">
+            <thead>
+                <tr>
+                    <td><strong class="has-text-weight-semibold">Question</strong></td>
+                    <td><strong class="has-text-weight-semibold">Vehicles</strong></td>
+                    <td><strong class="has-text-weight-semibold">Edit</strong></td>
+                    <td><strong class="has-text-weight-semibold">Delete</strong></td>
+                </tr>
+            </thead>
+            <tbody>
+                {% for question_template in question_templates %}
+                <tr>
+                    <td>{{ question_template.question }}</td>
+                    <td>{% if vehicles|dict_index:question_template.id|length == 1 %}
+                        {{ vehicles|dict_index:question_template.id|list_index:0|get_attr:'name' }}
+                        {% elif vehicles|dict_index:question_template.id|length == 0 %}
+                        ...
+                        {% else %}
+                        <i class="has-tooltip has-tooltipl-multiline" data-tooltip="{% for vehicle in vehicles|dict_index:question_template.id %}{{ vehicle.name }}{% if forloop.counter < vehicles|dict_index:question_template.id|length %}&#13;&#10;&#13;&#10;{% endif %}{% endfor %}">Many vehicles...</i>
+                        {% endif %}
+                    </td>
+                    <td><a href="{% url 'main-question_update' model_id=question_template.id %}?next={% url 'main-question' %}" class="button is-link is-outlined">Edit</a></td>
+                    <td><button onclick="openDeleteModal({{ question_template.id }})" class="button is-danger is-outlined">Delete</button></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div>
+            <a href="{% url 'main-question_add' %}?next={% url 'main-question' %}" class="button is-primary">Add</a>
+        </div>
     </div>
 </div>
 <div id="modal-delete" class="modal">
@@ -46,13 +59,13 @@
 
 <script>
     const questions = {
-        {% for model in models %}
-        {{ model.id }}: '{{ model.question }}',
+        {% for question_template in question_templates %}
+        {{ question_template.id }}: '{{ question_template.question }}',
         {% endfor %}
     };
     const questionDeleteLinks = {
-        {% for model in models %}
-        {{ model.id }}: "{% url 'main-question_delete' model_id=model.id %}?next={% url 'main-question' %}",
+        {% for question_template in question_templates %}
+        {{ question_template.id }}: "{% url 'main-question_delete' model_id=question_template.id %}?next={% url 'main-question' %}",
         {% endfor %}
     };
     const modal = document.getElementById('modal-delete');

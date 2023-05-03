@@ -16,10 +16,10 @@ def load_navbar_context(request: HttpRequest) -> dict[str, Any]:
     if request.user.is_authenticated:
         if request.user.profile.position_type == 1 or request.user.profile.position_type == 2:
             context = {
-                'base_vehicles': Vehicle.objects.all()
+                'base_vehicles': sorted(list(set(Vehicle.objects.filter(questiontemplate__position_type=request.user.profile.position_type).all())), key=lambda v: v.id) # TODO: make this more efficient
             }
+            print(context)
         elif request.user.profile.position_type >= 3:
-            print('hi', Vehicle.objects.all())
             context = {
                 'base_vehicles': Vehicle.objects.all(),
                 'base_companies': Company.objects.all()
@@ -169,8 +169,11 @@ def delete_question(request: HttpRequest, model_id: int):
 def questions(request: HttpRequest):
     if request.user.profile.position_type < 3:
         return HttpResponseForbidden("You haven't got the rank to view this page")
+    question_templates = QuestionTemplate.objects.all()
+    vehicles = {question_template.id:list(question_template.vehicles.all()) for question_template in question_templates}
     context = {
-        'models': QuestionTemplate.objects.all()
+        'question_templates': question_templates,
+        'vehicles': vehicles
     }
     context.update(load_navbar_context(request))
     return render(request, 'main/questions_edit.html', context=context)
@@ -182,12 +185,13 @@ def answers(request: HttpRequest):
     if request.user.profile.position_type < 3:
         return HttpResponseForbidden("You haven't got the rank to view this page")
     # TODO: apply filters though query parameters
+    all_question_intsances = QuestionInstance.objects.filter(answer_session=None)
     if request.GET.get('time', None) == 'today':
         now_utc = datetime.now(timezone.utc)
-        answer_instances = [question for question in QuestionInstance.objects.all() if question.question_template and question.question_template.should_be_instantiated(now_utc=now_utc)[0]]
+        answer_instances = [question for question in all_question_intsances.all().order_by('created_at') if question.question_template and question.question_template.should_be_instantiated(now_utc=now_utc)[0]]
         title = "Today's Answers"
     else:
-        answer_instances = QuestionInstance.objects.all()
+        answer_instances = all_question_intsances.all()
         title = 'All Answers'
     vehicles_ids = set()
     answer_instances_without_vehicle = []
@@ -259,10 +263,11 @@ def questions_answer_session(request: HttpRequest, vehicle_id: int, session_type
     vehicle = Vehicle.objects.get(id=vehicle_id)
     active_session = None
     if QuestionAnswerSession.objects.filter(vehicle=vehicle, user=request.user, session_type=session_type_cls).exists():
-        active_session = QuestionAnswerSession.objects.get(vehicle=vehicle, user=request.user)
+        active_session = QuestionAnswerSession.objects.get(vehicle=vehicle, user=request.user, session_type=session_type_cls)
         if now_utc - active_session.created_at > timedelta(minutes=10): # TODO: check if this should be more dynamic. maybe it depends on the session type?
             active_session.questioninstance_set.all().delete()
             active_session.delete()
+            messages.info(request, 'Last answer session expired. Starting a new one.')
             active_session = None
     if active_session is None:
         active_session = create_answer_session(request.user, vehicle, session_type_cls, now_utc)
@@ -279,7 +284,8 @@ def questions_answer_session(request: HttpRequest, vehicle_id: int, session_type
     context = {
         'vehicle': vehicle,
         'curr_page': page,
-        'last_page': len(question_templates)-1
+        'last_page': len(question_templates)-1,
+        'session_type': session_type
     }
     context.update(load_navbar_context(request))
     if request.method == 'POST':
@@ -287,11 +293,11 @@ def questions_answer_session(request: HttpRequest, vehicle_id: int, session_type
         context['form'] = form
         if form.is_valid():
             form.save()
-            messages.success(request, f'Answered question {question_template.question}!')
             if page < len(question_templates)-1:
                 return redirect('main-answer_session', vehicle_id=vehicle.id, session_type=session_type, page=page+1)
             # last page
             active_session.delete()
+            messages.success(request, 'You finished an answer session!')
             return redirect(request.GET.get('next', 'main-home'))
     else:
         form = QuestionAnswerForm(instance=question_instance)

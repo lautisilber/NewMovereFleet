@@ -49,7 +49,7 @@ def model_view_update(request: HttpRequest, form_cls: type[forms.ModelForm], mod
         form = form_cls(request.POST, instance=model)
         if form.is_valid():
             form.save()
-            messages.success(request, f'Created {form.instance.__class__.__name__}!')
+            messages.info(request, f'Updated {form.instance.__class__.__name__}!')
             return redirect(request.GET.get('next', 'main-home'))
     else:
         form = form_cls(instance=model)
@@ -62,4 +62,5 @@ def model_view_delete(request: HttpRequest, model_cls: type[models.Model], model
         return HttpResponseNotFound(f'The {model_cls.__name__} with id {model_id} was not found')
     model = model_cls.objects.get(id=model_id)
     model.delete()
+    messages.error(request, f'Deleted {model.__class__.__name__}!')
     return redirect(request.GET.get('next', 'main-home'))

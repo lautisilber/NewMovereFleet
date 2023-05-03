@@ -1,39 +1,64 @@
 {% extends "main/base.html" %}
 
 {# Without the static tag, static files cannot be used #}
-{# {% load static%} #}
+{% load static%}
+
+{% block header %}
+<link rel="stylesheet" href="{% static 'main/css/bulma-checkradio.min.css' %}">
+{% endblock %}
 
 {% block content %}
 
-<h1>Answer for {{ form.instance.question }}</h1>
-<div>
-    <form method="POST" enctype="multipart/form-data">
-        {% csrf_token %}
-        <fieldset class="form-group">
-            <legend class="border-bottom mb-4">{{ title }}</legend>
-
-            {{ form.non_field_errors }}
-
-            {% for hidden_field in form.hidden_fields %}
-            {{ hidden_field.errors }}
-            {{ hidden_field }}
-            {% endfor %}
-
-            <table border="1">
-                {% for field in form.visible_fields %}
-                <tr>
-                    <th>{{ field.label_tag }}</th>
-                    <td>
-                        {{ field.errors }}
-                        {{ field }}
-                        {{ field.help_text }}
-                    </td>
-                </tr>
+<div class="container">
+    <div class="box">
+        <h1 class="title">Answer for {{ form.instance.question }}</h1>
+        <h2>For vehicle {{ form.instance.vehicle.name }}</h2>
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <fieldset>
+    
+                {{ form.non_field_errors }}
+    
+                {% for hidden_field in form.hidden_fields %}
+                {{ hidden_field.errors }}
+                {{ hidden_field }}
                 {% endfor %}
-            </table>
-
-        </fieldset>
-    </form>
+    
+                {% for field in form.visible_fields %}
+                <div class="field">
+                    {% if field.widget_type == 'checkbox' %}
+                    <div class="field">
+                        {{ field }}
+                        <label class="label" for="{{ field.auto_id }}">{{ field.label }}</label>
+                    </div>
+                    {% else %}
+                    <label class="label" for="{{ field.auto_id }}">{{ field.label }}</label>
+                    <div class="control">
+                        {% for error in field.errors %}
+                        <p class="help is-danger">{{ error }}</p>
+                        {% endfor %}
+                        {% if field.widget_type == 'select' %}
+                        <div class="select">
+                            {{ field }}
+                        </div>
+                        {% elif field.widget_type == 'selectmultiple' %}
+                        <div class="select is-multiple">
+                            {{ field }}
+                        </div>                    
+                        {% else %}
+                        {{ field }}
+                        {% endif %}
+                        {% if field.help_text %}
+                        <p class="help">{{ field.help_text }}</p>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+    
+            </fieldset>
+        </form>
+    </div>
 </div>
 
 {% endblock %}

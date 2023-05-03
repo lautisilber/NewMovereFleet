@@ -1,43 +1,78 @@
 {% extends "main/base.html" %}
 
 {# Without the static tag, static files cannot be used #}
-{# {% load static%} #}
+{% load static%}
+
+{% block header %}
+<link rel="stylesheet" href="{% static 'main/css/bulma-checkradio.min.css' %}">
+<script src="{% static 'main/js/on_load.js' %}"></script>
+<script src="{% static 'main/js/validation_confirmation_checkbox.js' %}"></script>
+{% endblock %}
+{% load index %}
 
 {% block content %}
-
-<h1>{{ vehicle.name }}</h1>
-<h3>Question: {{ form.instance.question }}</h3>
-<div>
-    <form method="POST" enctype="multipart/form-data">
-        {% csrf_token %}
-        <fieldset class="form-group">
-            <legend class="border-bottom mb-4">{{ title }}</legend>
-
-            {{ form.non_field_errors }}
-
-            {% for hidden_field in form.hidden_fields %}
-            {{ hidden_field.errors }}
-            {{ hidden_field }}
-            {% endfor %}
-
-            <table border="1">
-                {% for field in form.visible_fields %}
-                <tr>
-                    <th>{{ field.label_tag }}</th>
-                    <td>
-                        {{ field.errors }}
-                        {{ field }}
-                        {{ field.help_text }}
-                    </td>
-                </tr>
+<div class="container is-fluid">
+    <progress class="progress is-primary" value="{{ curr_page }}" max="{{ last_page|add:1 }}"></progress>
+    <div class="box">
+        <h1 class="title">Question: {{ form.instance.question }}</h1>
+        <h2 class="subtitle">Vehiculo: {{ vehicle.name }}</h2>
+        {# action="{% url 'main-answer_session' vehicle_id=vehicle.id session_type=session_type page=curr_page %}" #}
+        <form method="POST">
+            {% csrf_token %}
+            <fieldset>
+                <br>
+    
+                {{ form.non_field_errors }}
+    
+                {% for hidden_field in form.hidden_fields %}
+                {{ hidden_field.errors }}
+                {{ hidden_field }}
                 {% endfor %}
-            </table>
-
-        </fieldset>
-        <div class="form-group">
-            <button class="btn btn-outline-info" type="submit">Next {{ curr_page|add:1 }}/{{ last_page|add:1 }}</button>
-        </div>
-    </form>
+    
+                {% for field in form.visible_fields %}
+                {{ field.errors }}
+                {{ field.help_text }}
+                <div class="field">
+                    {% if field.widget_type == 'checkbox' %}
+                    <div class="field">
+                        <div class="b-checkbox">
+                            {{ field }}
+                            <label class="label" for="{{ field.auto_id }}">{{ field.label }}</label>
+                        </div>
+                    </div>
+                    {% else %}
+                    <label class="label" for="{{ field.auto_id }}">{{ field.label }}</label>
+                    <div class="control">
+                        {% for error in field.errors %}
+                        <p class="help is-danger">{{ error }}</p>
+                        {% endfor %}
+                        {% if field.widget_type == 'select' %}
+                        <div class="select">
+                            {{ field }}
+                        </div>
+                        {% elif field.widget_type == 'selectmultiple' %}
+                        <div class="select is-multiple">
+                            {{ field }}
+                        </div>                    
+                        {% else %}
+                        {{ field }}
+                        {% endif %}
+                        {% if field.help_text %}
+                        <p class="help">{{ field.help_text }}</p>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </fieldset>
+            <br>
+            <div class="field is-grouped">
+                <div class="control">
+                    <button class="button is-primary" type="submit" id="submit-button">Next {{ curr_page|add:1 }}/{{ last_page|add:1 }}</button>
+                </div>
+            </div>
+        </form>
+    </div>
 </div>
 <script>
     const problem_description = document.getElementById('id_problem_description');
@@ -52,7 +87,7 @@
     }
 
     allowProblemDescription(answer.checked);
-    answer.addEventListener('change', () => {
+    answer.addEventListener('change', function() {
         allowProblemDescription(answer.checked)
     });
 
@@ -63,9 +98,7 @@
         }
         document.getElementsByTagName('form')[0].requestSubmit();
     }
-</script>
-{% if question_instance %}
-<a href="{% url 'main-question_delete' model_id=model.id %}?next={% url 'main-question' %}">Delete</a>
-{% endif %}
 
-{% endblock content %}
+    onLoad(helperConfirmationCheckboxValidator);
+</script>
+{% endblock %}

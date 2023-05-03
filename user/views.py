@@ -4,6 +4,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from .forms import UserRegisterForm
+from main.views import load_navbar_context
 
 # message.debug
 # message.info
@@ -21,9 +22,13 @@ def register(request: HttpRequest):
             return redirect('user-login')
     else:
         form = UserRegisterForm()
-    return render(request, 'user/register.html', {'form': form})
+    context = {
+        'form': form
+    }
+    return render(request, 'user/register.html', context=context)
 
 
 @login_required
 def profile(request: HttpRequest):
-    return render(request, 'user/profile.html')
+    context = load_navbar_context(request)
+    return render(request, 'user/profile.html', context=context)

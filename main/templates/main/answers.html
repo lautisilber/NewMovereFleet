@@ -1,31 +1,80 @@
 {% extends "main/base.html" %}
 
 {# Without the static tag, static files cannot be used #}
-{# {% load static%} #}
+{% load static%}
 {% load index %}
 
+{% block header %}
+<link rel="stylesheet" href="{% static 'main/css/bulma-checkradio.min.css' %}">
+{% endblock %}
+
 {% block content %}
-<h1>{{ title }}</h1>
-<div>
-    <ul>
+<div class="container">
+    <h1 class="title">{{ title }}</h1>
+    <div class="select">
+        <select id="vehicle-select">
+            {% for vehicle in answer_instances %}
+            <option value="{{ vehicle }}">{{ vehicle }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <br>
+    <br>
+    <div class="box">
         {% for vehicle in answer_instances %}
-            <li><strong>{{ vehicle }}</strong>
-                <ul>
-                    {% for answer_instance in answer_instances|dict_index:vehicle %}
-                    <li><a href="{% url 'main-answer' answer_id=answer_instance.id %}">{{ answer_instance.question }}</a></li>
-                    {% endfor %}
-                </ul>
-            </li>
-        {% endfor %}
-        {% if answer_instances_without_vehicle %}
-        <li><strong>Answers without vehicle</strong>
-            <ul>
-                {% for answer_instance in answer_instances_without_vehicle %}
-                <li><a href="{% url 'main-answer' answer_id=answer_instance.id %}">{{ answer_instance.question }}</a></li>
+        <table class="table" id="{{ vehicle }}-table">
+            <thead>
+                <tr>
+                    <td>Question</td>
+                    <td>Answer</td>
+                    <td>Details</td>
+                </tr>
+            </thead>
+            <tbody>
+                {% for answer_instance in answer_instances|dict_index:vehicle %}
+                <tr{% if not answer_instance.answer %} class="has-background-danger-light"{% endif %}>
+                    <td class="{% if not answer_instance.answer %}has-text-danger-dark{% else %}has-text-primary-dark{% endif %}">{{ answer_instance.question }}</td>
+                    <td>
+                        <div class="field">
+                            <input class="is-checkradio questoin-answer-cb {% if not answer_instance.answer %}is-danger{% else %}is-primary{% endif %}" id="{{ vehicle }}-{{ answer_instance.id }}-cb" type="checkbox" name="{{ vehicle }}-{{ answer_instance.id }}-cb" {% if answer_instance.answer %}checked="checked"{% endif %}>
+                            <label for="{{ vehicle }}-{{ answer_instance.id }}-cb"></label>
+                        </div>
+                    </td>
+                    <td><a href="{% url 'main-answer' answer_id=answer_instance.id %}" class="button is-outlined {% if not answer_instance.answer %}is-danger{% else %}is-primary{% endif %}">Details</a></td>
+                </tr>
                 {% endfor %}
-            </ul>
-        {% endif %}
-    </ul>
+            </tbody>
+        </table>
+        {% endfor %}
+    </div>
 </div>
+<script>
+    const tables = {
+        {% for vehicle in answer_instances %}"{{ vehicle }}-table": document.getElementById("{{ vehicle }}-table"),{% endfor %}
+    };
+
+    function showTable(table_id) {
+        for (key in tables) {
+            if (key == table_id) {
+                tables[key].removeAttribute('hidden');
+            } else {
+                tables[key].setAttribute('hidden', '');
+            }
+        }
+    }
+
+    const select = document.getElementById('vehicle-select');
+    select.addEventListener("change", function(event) {
+        console.log(event.target.value);
+        showTable(event.target.value+'-table');
+    });
+    showTable(select.value+'-table');
+
+    Array.prototype.forEach.call(document.getElementsByClassName('questoin-answer-cb'), function(elem) {
+        elem.addEventListener('click', function(evt) {
+            evt.preventDefault();
+        });
+    });
+</script>
 
 {% endblock content %}

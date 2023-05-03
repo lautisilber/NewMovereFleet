@@ -5,51 +5,53 @@
 
 {% block content %}
 <div class="container">
-    <h1>{{ title }}</h1>
-    <form method="POST">
-        {% csrf_token %}
-        <fieldset class="form-group">
-
-            {{ form.non_field_errors }}
-
-            {% for hidden_field in form.hidden_fields %}
-            {{ hidden_field.errors }}
-            {{ hidden_field }}
-            {% endfor %}
-
-            {% for field in form.visible_fields %}
-            <div class="field">
-                <label class="label" for="{{ field.auto_id }}">{{ field.label }}</label>
-                <div class="control">
-                    {% for error in field.errors %}
-                    <p class="help is-danger">{{ error }}</p>
-                    {% endfor %}
-                    {{ field }}
-                    {% if field.help_text %}
-                    <p class="help">{{ field.help_text }}</p>
-                    {% endif %}
+    <div class="box">
+        <h1 class="title">{{ title }}</h1>
+        <form method="POST">
+            {% csrf_token %}
+            <fieldset>
+    
+                {{ form.non_field_errors }}
+    
+                {% for hidden_field in form.hidden_fields %}
+                {{ hidden_field.errors }}
+                {{ hidden_field }}
+                {% endfor %}
+    
+                {% for field in form.visible_fields %}
+                <div class="field">
+                    <label class="label" for="{{ field.auto_id }}">{{ field.label }}</label>
+                    <div class="control">
+                        {% for error in field.errors %}
+                        <p class="help is-danger">{{ error }}</p>
+                        {% endfor %}
+                        {{ field }}
+                        {% if field.help_text %}
+                        <p class="help">{{ field.help_text }}</p>
+                        {% endif %}
+                    </div>
                 </div>
-            </div>
-            {% endfor %}
-            <br>
-            {% if model %}
-            <div class="field is-grouped">
-                <div class="control">
-                    <button class="button is-link is-outlined" type="submit">{{ ok_button_text }}</button>
+                {% endfor %}
+                <br>
+                {% if model %}
+                <div class="field is-grouped">
+                    <div class="control">
+                        <button class="button is-link is-outlined" type="submit">{{ ok_button_text }}</button>
+                    </div>
+                    <div class="control">
+                        <button id="open-delete-modal" class="button is-danger">Delete</button>
+                    </div>
                 </div>
-                <div class="control">
-                    <button id="open-delete-modal" class="button is-danger">Delete</button>
+                {% else %}
+                <div class="field">
+                    <div class="control">
+                        <button class="button is-link" type="submit">{{ ok_button_text }}</button>
+                    </div>
                 </div>
-            </div>
-            {% else %}
-            <div class="field">
-                <div class="control">
-                    <button class="button is-link" type="submit">{{ ok_button_text }}</button>
-                </div>
-            </div>
-            {% endif %}
-        </fieldset>
-    </form>
+                {% endif %}
+            </fieldset>
+        </form>
+    </div>
 </div>
 {% if model %}
 <div id="modal-delete" class="modal">

@@ -36,3 +36,9 @@ def create_user(sender, instance, created, **kwargs):
         Profile.objects.create(user=instance, **extra_info)
 
 signals.post_save.connect(create_user, sender=User, weak=False, dispatch_uid='user.models.create_user')
+
+
+def delete_user(sender, instance, using, **kwargs):
+    instance.questionanswersession_set.all().delete()
+
+signals.pre_delete.connect(delete_user, sender=User, weak=False, dispatch_uid='user.models.delete_user')
