@@ -20,14 +20,14 @@ def _bulma_textarea(**attrs):
 def _bulma_checkbox(**attrs):
     return forms.widgets.CheckboxInput(attrs=attrs)
 
-class VehicleModelChoiceField(ModelChoiceField):
-    def __init__(self) -> None:
-        super().__init__(queryset=Vehicle.objects.all(), widget=_bulma_vehicle_modelchoicefield())
-    def label_from_instance(self, obj: Vehicle):
-        return obj.name
+# class VehicleModelChoiceField(ModelChoiceField):
+#     def __init__(self) -> None:
+#         super().__init__(queryset=Vehicle.objects.all(), widget=_bulma_vehicle_modelchoicefield())
+#     def label_from_instance(self, obj: Vehicle):
+#         return obj.name
 
-def _bulma_vehicle_modelchoicefield():
-    return forms.widgets.SelectMultiple(attrs={'class': 'input'})
+# def _bulma_vehicle_modelchoicefield():
+#     return forms.widgets.SelectMultiple(attrs={'class': 'input'})
 
 error_css_class = 'is-danger'
 
@@ -82,7 +82,7 @@ class VehicleForm(forms.ModelForm):
 #         super().__init__(attrs, format)
 
 class QuestionForm(forms.ModelForm):
-    vehicles = VehicleModelChoiceField()
+    # vehicles = VehicleModelChoiceField()
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
@@ -120,11 +120,11 @@ class QuestionAnswerForm(forms.ModelForm):
         if readonly_kwarg in kwargs:
             kwargs.pop(readonly_kwarg)
         super().__init__(*args, **kwargs)
-        if readonly:
-            for field in self.fields.values():
-                field.readonly = True
-        else:
+        if not readonly:
             self.fields['answer_confirm'] = forms.BooleanField(help_text='Have you read the questions and answered conciously?', initial=False, required=True, widget=_bulma_checkbox())
+        # else:
+        #     for field in self.fields.values():
+        #         field.disabled = True
 
         allow_notes = self.instance.question_template.allow_notes if self.instance.question_template else True
         if not allow_notes:

@@ -3,10 +3,6 @@
 {# Without the static tag, static files cannot be used #}
 {% load static%}
 
-{% block header %}
-<link rel="stylesheet" href="{% static 'main/css/bulma-checkradio.min.css' %}">
-{% endblock %}
-
 {% block content %}
 
 <div class="container">
@@ -65,5 +61,6 @@
         </form>
     </div>
 </div>
+<script src="{% static 'main/js/read_only.js' %}"></script>
 
 {% endblock %}

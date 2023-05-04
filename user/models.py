@@ -21,8 +21,11 @@ class Profile(models.Model):
     def get_position_types(cls) -> list[tuple[str, str]]:
         return cls.PositionType.choices
 
-    def __str__(self):
+    def __repr__(self):
         return f'Profile(user_id={self.user.id}, user_name={self.user.username}, position_type={self.position_type})'
+    
+    def __str__(self) -> str:
+        return f"{self.user.username}'s profile"
     
 
 

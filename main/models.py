@@ -23,8 +23,11 @@ class Company(models.Model):
     name = models.CharField(max_length=64, null=False, unique=True)
     info = models.CharField(max_length=256, null=True, blank=True)
 
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         return f'Company(name={self.name})'
+    
+    def __str__(self) -> str:
+        return self.name
 
 # a vehicle is made out of parts
 # there are two kinds of parts
@@ -43,8 +46,11 @@ class Vehicle(models.Model):
         
     company = models.ForeignKey(Company, on_delete=models.CASCADE, null=False, blank=False)
     
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         return f'Vehicle(id={self.id}, name={self.name})'
+    
+    def __str__(self) -> str:
+        return self.name
 
 
 ### QUESTIONS ###
@@ -70,8 +76,11 @@ class QuestionAnswerSession(TimeStampMixin):
     vehicle = models.ForeignKey(Vehicle, models.CASCADE, null=False, blank=False)
     session_type = models.SmallIntegerField(choices=QuestionType.choices, default=QuestionType.GENERIC, null=False)
 
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         return f'QuestionAnswerSession(question_template_ids={[qt.id for qt in self.questiontemplate_set.all()]}, question_instance_ids={[qi.id for qi in self.questioninstance_set.all()]}, session_type={self.session_type})'
+    
+    def __str__(self) -> str:
+        return f'Answer session {self.id}'
 
 
 class QuestionTemplate(models.Model):
@@ -104,8 +113,11 @@ class QuestionTemplate(models.Model):
 
         return instantiate, n_instances
 
+    def __repr__(self) -> str:
+        return f'QuestionTemplate(id={self.id}, question="{self.question}", allow_notes={self.allow_notes})'
+    
     def __str__(self) -> str:
-        return f'ChecklistQuestionTemplate(id={self.id}, question="{self.question}", allow_notes={self.allow_notes})'
+        return 'Question tempate "{self.question}"'
 
 
 class QuestionInstance(TimeStampMixin):
@@ -129,8 +141,11 @@ class QuestionInstance(TimeStampMixin):
         self.question = self.question_template.question
         self.position_type = self.question_template.position_type
 
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         return f'QuestionInstance(id={self.id}, title={self.question_template.question if self.question_template else "None"}, answer={self.answer})'
+    
+    def __str__(self) -> str:
+        return f'Question instance "{self.question}"'
 
 def create_question_instance(question_template: QuestionTemplate, vehicle: Vehicle, user: User) -> QuestionInstance:
     question_instance = QuestionInstance(question_template=question_template, vehicle=vehicle, user=user)
