@@ -53,6 +53,7 @@ class QuestionType(models.IntegerChoices):
     GENERIC = 0, gettext_lazy('Generic')
     GET_ON = 1, gettext_lazy('Get on')
     GET_OFF = 2, gettext_lazy('Get off')
+    GET_ON_OFF = 3, gettext_lazy('Get on & Get off')
 
     @classmethod
     def get_type_from_int(cls, n: int):
@@ -60,6 +61,8 @@ class QuestionType(models.IntegerChoices):
             return cls.GET_ON
         elif n == 2:
             return cls.GET_OFF
+        elif n == 3:
+            return cls.GET_ON_OFF
         return cls.GENERIC
 
 class QuestionAnswerSession(TimeStampMixin):
@@ -115,13 +118,16 @@ class QuestionInstance(TimeStampMixin):
     answer = models.BooleanField(null=False, default=None)
     problem_description = models.TextField(null=True, blank=True)
     notes = models.TextField(null=True, blank=True)
+    question_type = models.SmallIntegerField(choices=QuestionType.choices, default=QuestionType.GENERIC, null=False)
 
     answer_session = models.ForeignKey(QuestionAnswerSession, models.SET_NULL, null=True, blank=True)
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        if self.question_template:
-            self.question = self.question_template.question
+        if self.question_template is None:
+            raise Exception("Can't instantiate QuestionInstance without a QuestionTemplate parameter")
+        self.question = self.question_template.question
+        self.position_type = self.question_template.position_type
 
     def __str__(self) -> str:
         return f'QuestionInstance(id={self.id}, title={self.question_template.question if self.question_template else "None"}, answer={self.answer})'

@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 import sys
 import inspect
 from django.db import models
@@ -64,3 +65,12 @@ def model_view_delete(request: HttpRequest, model_cls: type[models.Model], model
     model.delete()
     messages.error(request, f'Deleted {model.__class__.__name__}!')
     return redirect(request.GET.get('next', 'main-home'))
+
+def str_to_datetime(s: Union[str, None], accept_today: bool=True) -> Union[datetime, None]:
+    if accept_today:
+        if s == 'today':
+            return datetime.now(timezone.utc)
+    try:
+        return datetime.strptime(s, '%Y-%m-%d')
+    except:
+        return None

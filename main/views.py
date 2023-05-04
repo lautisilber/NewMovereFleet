@@ -6,8 +6,8 @@ from django.views.decorators.http import require_http_methods
 from django.contrib import messages
 from .forms import QuestionAnswerForm, QuestionForm, CompanyForm, VehicleForm
 from .models import QuestionAnswerSession, QuestionInstance, QuestionTemplate, Company, QuestionType, Vehicle, add_question_instance_to_session, create_answer_session
-from .utils import model_view_create, model_view_update, model_view_delete
-from datetime import datetime, timedelta, timezone
+from .utils import model_view_create, model_view_update, model_view_delete, str_to_datetime
+from datetime import datetime, timedelta, timezone, date
 
 
 
@@ -18,7 +18,6 @@ def load_navbar_context(request: HttpRequest) -> dict[str, Any]:
             context = {
                 'base_vehicles': sorted(list(set(Vehicle.objects.filter(questiontemplate__position_type=request.user.profile.position_type).all())), key=lambda v: v.id) # TODO: make this more efficient
             }
-            print(context)
         elif request.user.profile.position_type >= 3:
             context = {
                 'base_vehicles': Vehicle.objects.all(),
@@ -186,15 +185,38 @@ def answers(request: HttpRequest):
         return HttpResponseForbidden("You haven't got the rank to view this page")
     # TODO: apply filters though query parameters
     all_question_intsances = QuestionInstance.objects.filter(answer_session=None)
-    if request.GET.get('time', None) == 'today':
-        now_utc = datetime.now(timezone.utc)
-        answer_instances = [question for question in all_question_intsances.all().order_by('created_at') if question.question_template and question.question_template.should_be_instantiated(now_utc=now_utc)[0]]
-        title = "Today's Answers"
+
+    question_type = request.GET.get('question_type', None) # may be 0=generic, 1=get on, 2=get off, 3=get on & get off
+    if question_type not in [None, '0', '1', '2', '3'] and question_type is not None:
+        question_type = None
+    if question_type is not None:
+        question_type = int(question_type)
+    if question_type is not None:
+        all_question_intsances = all_question_intsances.filter(question_type=question_type)
+
+    time_to = request.GET.get('time_to', None) # may be today or a date formatted as yyyy-mm-dd
+    time_from = request.GET.get('time_from', None) # may be a date formatted as yyyy-mm-dd
+    time_to_datetime = str_to_datetime(time_to)
+    time_from_datetime = None if time_to == 'today' else str_to_datetime(time_from, False)
+
+    if time_to is None:
+        title = 'All Time'
+    elif time_to == 'today':
+        title = 'Today'
+    elif time_from_datetime == None:
+        title = time_to_datetime.strftime("%d %b, %Y")
+    else:
+        title = time_from_datetime.strftime("%d %b, %Y") + ' to ' + time_to_datetime.strftime("%d %b, %Y")
+
+    all_question_intsances = all_question_intsances.order_by('created_at')
+    if time_to_datetime:
+        start = time_from_datetime if time_from_datetime else datetime(year=time_to_datetime.year, month=time_to_datetime.month, day=time_to_datetime.day)
+        answer_instances = all_question_intsances.filter(created_at__range=(start, time_to_datetime)).all()
     else:
         answer_instances = all_question_intsances.all()
-        title = 'All Answers'
+
     vehicles_ids = set()
-    answer_instances_without_vehicle = []
+    answer_instances_without_vehicle = list()
     for answer_instance in answer_instances:
         if answer_instance.vehicle:
             vehicles_ids.add(answer_instance.vehicle.id)
@@ -208,8 +230,20 @@ def answers(request: HttpRequest):
     context = {
         'answer_instances': answer_instances,
         'answer_instances_without_vehicle': answer_instances_without_vehicle,
-        'title': title
+        'title': title,
+        'question_type': question_type,
+        'time_to': time_to if time_from_datetime else None,
+        'time_from': time_from if time_from_datetime else None
     }
+    default_vehicle = request.GET.get('default_vehicle', None)
+    if default_vehicle in answer_instances:
+        context['default_vehicle'] = default_vehicle
+    success_visibility = request.GET.get('success_visibility', None)
+    if success_visibility:
+        context['success_visibility'] = success_visibility.lower() == 'false'
+    accordion_active = request.GET.get('accordion_active', None)
+    if accordion_active:
+        context['accordion_active'] = accordion_active == 'true'
     context.update(load_navbar_context(request))
     return render(request, 'main/answers.html', context=context)
 
@@ -240,9 +274,11 @@ def questions_answer_portal(request: HttpRequest, vehicle_id: int):
         return HttpResponseForbidden("You can't view this page because you aren't a driver or a mechanic")
     if not Vehicle.objects.filter(id=vehicle_id).exists():
         return HttpResponseBadRequest(f'No vehicle was found with id {vehicle_id}')
+    session_types = [t.value for t in QuestionType if QuestionTemplate.objects.filter(vehicles__id=vehicle_id, position_type=request.user.profile.position_type, question_type=t).exists()]
     vehicle = Vehicle.objects.get(id=vehicle_id)
     context = {
-        'vehicle': vehicle
+        'vehicle': vehicle,
+        'session_types': session_types
     }
     context.update(load_navbar_context(request))
     return render(request, 'main/question_answer_portal.html', context=context)
@@ -256,6 +292,10 @@ def questions_answer_session(request: HttpRequest, vehicle_id: int, session_type
         return HttpResponseForbidden("You can't view this page because you aren't a driver or a mechanic")
     if not Vehicle.objects.filter(id=vehicle_id).exists():
         return HttpResponseBadRequest(f'No vehicle was found with id {vehicle_id}')
+    
+    if 'back' in request.GET:
+        return redirect('main-answer_session', vehicle_id=vehicle.id, session_type=session_type, page=min(page-1, 0))
+    
     
     session_type_cls = QuestionType.get_type_from_int(session_type)
 
@@ -302,6 +342,7 @@ def questions_answer_session(request: HttpRequest, vehicle_id: int, session_type
     else:
         form = QuestionAnswerForm(instance=question_instance)
         context['form'] = form
+    print(form.errors)
     return render(request, 'main/question_answer_session.html', context=context)
 
 

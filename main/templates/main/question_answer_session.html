@@ -6,13 +6,12 @@
 {% block header %}
 <link rel="stylesheet" href="{% static 'main/css/bulma-checkradio.min.css' %}">
 <script src="{% static 'main/js/on_load.js' %}"></script>
-<script src="{% static 'main/js/validation_confirmation_checkbox.js' %}"></script>
 {% endblock %}
 {% load index %}
 
 {% block content %}
 <div class="container is-fluid">
-    <progress class="progress is-primary" value="{{ curr_page }}" max="{{ last_page|add:1 }}"></progress>
+    <progress class="progress is-primary" value="{{ curr_page|add:1 }}" max="{{ last_page|add:1 }}"></progress>
     <div class="box">
         <h1 class="title">Question: {{ form.instance.question }}</h1>
         <h2 class="subtitle">Vehiculo: {{ vehicle.name }}</h2>
@@ -30,14 +29,15 @@
                 {% endfor %}
     
                 {% for field in form.visible_fields %}
-                {{ field.errors }}
-                {{ field.help_text }}
                 <div class="field">
                     {% if field.widget_type == 'checkbox' %}
+
                     <div class="field">
-                        <div class="b-checkbox">
-                            {{ field }}
-                            <label class="label" for="{{ field.auto_id }}">{{ field.label }}</label>
+                        <div class="control">
+                            <label class="checkbox">
+                              <input type="checkbox" name="{{ field.name }}" id="{{ field.auto_id }}"{% if field.field.required %} required{% endif %}>
+                                {{ field.label }}
+                            </label>
                         </div>
                     </div>
                     {% else %}
@@ -98,7 +98,5 @@
         }
         document.getElementsByTagName('form')[0].requestSubmit();
     }
-
-    onLoad(helperConfirmationCheckboxValidator);
 </script>
 {% endblock %}

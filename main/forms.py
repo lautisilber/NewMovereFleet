@@ -1,27 +1,49 @@
-from typing import Any, Dict, Mapping, Optional, Type, Union
+from typing import Any, Callable, Dict, Optional, Union
 from django import forms
+from django.db.models.manager import Manager
+from django.db.models.query import QuerySet
 from .models import QuestionInstance, QuestionTemplate, Company, Vehicle
 from django.utils.translation import gettext_lazy
-from datetime import datetime, timezone
+from django.forms import ModelChoiceField
 
 
 def _bulma_text_input():
-    return forms.widgets.TextInput(attrs={'class': 'input is-primary'})
+    return forms.widgets.TextInput(attrs={'class': 'input'})
 
 def _bulma_number_input():
-    return forms.widgets.NumberInput(attrs={'class': 'input is-primary'})
+    return forms.widgets.NumberInput(attrs={'class': 'input'})
 
 def _bulma_textarea(**attrs):
-    attrs['class'] = 'input is-primary'
+    attrs['class'] = 'input'
     return forms.widgets.Textarea(attrs=attrs)
 
 def _bulma_checkbox(**attrs):
-    attrs['class'] = 'is-checkradio'
     return forms.widgets.CheckboxInput(attrs=attrs)
 
+class VehicleModelChoiceField(ModelChoiceField):
+    def __init__(self) -> None:
+        super().__init__(queryset=Vehicle.objects.all(), widget=_bulma_vehicle_modelchoicefield())
+    def label_from_instance(self, obj: Vehicle):
+        return obj.name
+
+def _bulma_vehicle_modelchoicefield():
+    return forms.widgets.SelectMultiple(attrs={'class': 'input'})
+
+error_css_class = 'is-danger'
+
+def form_init_add_errors(form: Union[forms.Form, forms.ModelForm]):
+        for field in form.errors:
+            if 'class' in form[field].field.widget.attrs:
+                form[field].field.widget.attrs['class'] += ' ' + error_css_class
+            else:
+                form[field].field.widget.attrs['class'] += error_css_class
+
 class CompanyForm(forms.ModelForm):
-    error_css_class = 'is-danger'
-    required_css_class = 'is-warning'
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        form_init_add_errors(self)
+
     class Meta:
         model = Company
         fields = ['name']
@@ -33,8 +55,11 @@ class CompanyForm(forms.ModelForm):
         }
 
 class VehicleForm(forms.ModelForm):
-    error_css_class = 'form-error'
-    required_css_class = 'form-required'
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        form_init_add_errors(self)
+
     class Meta:
         model = Vehicle
         fields = ['name', 'mileage', 'fuel', 'company']
@@ -57,12 +82,11 @@ class VehicleForm(forms.ModelForm):
 #         super().__init__(attrs, format)
 
 class QuestionForm(forms.ModelForm):
-    error_css_class = 'form-error'
-    required_css_class = 'form-required'
+    vehicles = VehicleModelChoiceField()
 
-    # def __init__(self, *args, **kwargs) -> None:
-    #     super().__init__(*args, **kwargs)
-    #     self.fields['periodicity_anchor'] = forms.DateField(initial=datetime.now(), widget=forms.DateInput(attrs={"type": "date"}))
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        form_init_add_errors(self)
 
     class Meta:
         model = QuestionTemplate
@@ -89,8 +113,6 @@ class QuestionForm(forms.ModelForm):
 
 
 class QuestionAnswerForm(forms.ModelForm):
-    error_css_class = 'form-error'
-    required_css_class = 'form-required'
 
     def __init__(self, *args, **kwargs):
         readonly_kwarg = 'readonly'
@@ -100,13 +122,15 @@ class QuestionAnswerForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if readonly:
             for field in self.fields.values():
-                field.disabled = True
+                field.readonly = True
         else:
-            self.fields['answer_confirm'] = forms.BooleanField(help_text='Have you read the questions and answered conciously?', initial=False, required=True, widget=_bulma_checkbox(confirm_read='true'))
+            self.fields['answer_confirm'] = forms.BooleanField(help_text='Have you read the questions and answered conciously?', initial=False, required=True, widget=_bulma_checkbox())
 
         allow_notes = self.instance.question_template.allow_notes if self.instance.question_template else True
         if not allow_notes:
             self.fields['notes'].widget = self.fields['notes'].hidden_widget()
+        
+        form_init_add_errors(self)
 
     class Meta:
         model = QuestionInstance

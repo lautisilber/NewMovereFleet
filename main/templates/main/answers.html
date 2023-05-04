@@ -5,20 +5,71 @@
 {% load index %}
 
 {% block header %}
-<link rel="stylesheet" href="{% static 'main/css/bulma-checkradio.min.css' %}">
+<link rel="stylesheet" href="{% static 'main/css/bulma-switch.min.css' %}">
+<link rel="stylesheet" href="{% static 'main/css/bulma-accordion.min.css' %}">
+<script src="{% static 'main/js/bulma-accordion.min.js' %}"></script>
+<script src="{% static 'main/js/on_load.js' %}"></script>
+<script src="{% static 'main/js/date_simple_string.js' %}"></script>
 {% endblock %}
 
 {% block content %}
 <div class="container">
     <h1 class="title">{{ title }}</h1>
-    <div class="select">
-        <select id="vehicle-select">
-            {% for vehicle in answer_instances %}
-            <option value="{{ vehicle }}">{{ vehicle }}</option>
-            {% endfor %}
-        </select>
+    <h2 class="subtitle">
+    {% if question_type == 0 %}
+    Generic questions
+    {% elif question_type == 1 %}
+    Get-on questions
+    {% elif question_type == 2 %}
+    Get-off questions
+    {% elif question_type == 3 %}
+    Get-on &amp; Get-off questions
+    {% elif question_type is None %}
+    All questions
+    {% endif %}
+    </h2>
+    <div class="field is-grouped">
+        <div class="select mr-3">
+            <select id="vehicle-select">
+                {% for vehicle in answer_instances %}
+                <option value="{{ vehicle }}"{% if default_vehicle %}{% if vehicle == default_vehicle %}selected{% endif %}{% endif %}>{{ vehicle }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="select mr-3">
+            <select id="question-type-select">
+                <option value="3"{% if question_type == 3 %} selected{% endif %}>Get-on &amp; Get-off</option>
+                <option value="1"{% if question_type == 1 %} selected{% endif %}>Get-on</option>
+                <option value="2"{% if question_type == 2 %} selected{% endif %}>Get-off</option>
+                <option value="0"{% if question_type == 0 %} selected{% endif %}>Generic</option>
+                <option value="none"{% if question_type is None %} selected{% endif %}>All</option>
+            </select>
+        </div>
+        <input id="switch-only-false" type="checkbox" name="switch-only-false" class="switch is-rounded is-danger" {% if not success_visibility %}checked="checked"{% endif %}>
+        <label for="switch-only-false">Show only failures</label>
     </div>
-    <br>
+
+    <section class="accordions">
+        <article id="accordion-activator" class="accordion{% if accordion_active == True %} is-active{% endif %}">
+            <div class="accordion-header toggle">
+                <p>Date range</p>
+            </div>
+            <div class="accordion-body">
+                <div class="accordion-content">
+                    <div class="field">
+                        <label for="date-from">Time from</label>
+                        <input type="date" name="date-from" id="date-from" class="input">
+                    </div>
+                    <div class="field">
+                        <label for="date-to">Time to</label><br>
+                        <input type="date" name="date-to" id="date-to" class="input">
+                    </div>
+                    <button class="button" id="date-range-button">Search</button>
+                </div>
+            </div>
+        </article>
+    </section>
+      
     <br>
     <div class="box">
         {% for vehicle in answer_instances %}
@@ -27,19 +78,23 @@
                 <tr>
                     <td>Question</td>
                     <td>Answer</td>
+                    <td>User</td>
+                    <td>User profile</td>
                     <td>Details</td>
                 </tr>
             </thead>
-            <tbody>
+            <tbody class="answers-body">
                 {% for answer_instance in answer_instances|dict_index:vehicle %}
-                <tr{% if not answer_instance.answer %} class="has-background-danger-light"{% endif %}>
+                <tr{% if not answer_instance.answer %} class="has-background-danger-light"{% else %} class="success-row"{% endif %}>
                     <td class="{% if not answer_instance.answer %}has-text-danger-dark{% else %}has-text-primary-dark{% endif %}">{{ answer_instance.question }}</td>
                     <td>
                         <div class="field">
-                            <input class="is-checkradio questoin-answer-cb {% if not answer_instance.answer %}is-danger{% else %}is-primary{% endif %}" id="{{ vehicle }}-{{ answer_instance.id }}-cb" type="checkbox" name="{{ vehicle }}-{{ answer_instance.id }}-cb" {% if answer_instance.answer %}checked="checked"{% endif %}>
+                            <input class="is-checkradio question-answer-cb {% if not answer_instance.answer %}is-danger{% else %}is-primary{% endif %}" id="{{ vehicle }}-{{ answer_instance.id }}-cb" type="checkbox" name="{{ vehicle }}-{{ answer_instance.id }}-cb" {% if answer_instance.answer %}checked="checked"{% endif %}>
                             <label for="{{ vehicle }}-{{ answer_instance.id }}-cb"></label>
                         </div>
                     </td>
+                    <td>{{ answer_instance.user.username }}</td>
+                    <td>{% if answer_instance.user.profile.position_type == 1 %}Driver{% elif answer_instance.user.profile.position_type == 2 %}Mechanic{% else %}...{% endif %}</td>
                     <td><a href="{% url 'main-answer' answer_id=answer_instance.id %}" class="button is-outlined {% if not answer_instance.answer %}is-danger{% else %}is-primary{% endif %}">Details</a></td>
                 </tr>
                 {% endfor %}
@@ -63,17 +118,77 @@
         }
     }
 
-    const select = document.getElementById('vehicle-select');
-    select.addEventListener("change", function(event) {
+    const vehicleSelect = document.getElementById('vehicle-select');
+    vehicleSelect.addEventListener("change", function(event) {
         console.log(event.target.value);
         showTable(event.target.value+'-table');
     });
-    showTable(select.value+'-table');
+    showTable(vehicleSelect.value+'-table');
 
-    Array.prototype.forEach.call(document.getElementsByClassName('questoin-answer-cb'), function(elem) {
+    Array.prototype.forEach.call(document.getElementsByClassName('question-answer-cb'), function(elem) {
         elem.addEventListener('click', function(evt) {
             evt.preventDefault();
         });
+    });
+
+    const successes = Array.prototype.slice.call(document.getElementsByClassName('success-row'), 0);
+    function showSuccesses(state) {
+        successes.forEach(function(elem) {
+            if (state) {
+                elem.removeAttribute('hidden', '');
+            } else {
+                elem.setAttribute('hidden', '');
+            }
+        })
+    }
+    const onlyFalseSwitch = document.getElementById('switch-only-false');
+    onlyFalseSwitch.addEventListener('change', function(evt) {
+        showSuccesses(!evt.target.checked);
+    })
+    showSuccesses(!onlyFalseSwitch.checked);
+
+    function addDays(date, days) {
+        var result = new Date(date.valueOf());
+        result.setDate(result.getDate() + days);
+        return result;
+    }
+
+    const dateFromInput = document.getElementById("date-from");
+    const dateToInput = document.getElementById("date-to");
+
+    {% if time_to %}
+    dateToInput.value = "{{ time_to }}";
+    {% else %}
+    dateToInput.value = (addDays(new Date(), 1)).simpleString()
+    {% endif %}
+    {% if time_from %}
+    dateFromInput.value = "{{ time_from }}";
+    {% else %}
+    dateFromInput.value = (new Date()).simpleString()
+    {% endif %}
+
+    const questionTypeSelect = document.getElementById('question-type-select');
+
+    function generateLink() {
+        const dateFrom = new Date(dateFromInput.value);
+        const dateTo = new Date(dateToInput.value);
+        const successVisibility = onlyFalseSwitch.checked;
+        const questionType = questionTypeSelect.value;
+        const vehicle = vehicleSelect.value;
+        const accordionActive = document.getElementById('accordion-activator').classList.contains('is-active');
+        const link = "{% url 'main-answers' %}?time_to="+dateTo.simpleString()+"&time_from="+dateFrom.simpleString()+"&question_type="+String(questionType)+"{% if default_vehicle %}&default_vehicle={{ default_vehicle }}{% endif %}&success_visibility="+(successVisibility ? 'true' : 'false')+"&default_vehicle="+vehicle+'&accordion_active='+String(accordionActive);
+        return link;
+    }
+
+    function reload() {
+        const link = generateLink();
+        location.replace(link);
+    }
+
+    onLoad(function() {
+        var accordions = bulmaAccordion.attach();
+        document.getElementById('date-range-button').addEventListener('click', reload);
+        questionTypeSelect.addEventListener('change', reload);
     });
 </script>
 
