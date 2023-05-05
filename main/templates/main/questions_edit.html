@@ -27,9 +27,9 @@
                     <td>{% if vehicles|dict_index:question_template.id|length == 1 %}
                         {{ vehicles|dict_index:question_template.id|list_index:0|get_attr:'name' }}
                         {% elif vehicles|dict_index:question_template.id|length == 0 %}
-                        ...
+                        -
                         {% else %}
-                        <i class="has-tooltip has-tooltipl-multiline" data-tooltip="{% for vehicle in vehicles|dict_index:question_template.id %}{{ vehicle.name }}{% if forloop.counter < vehicles|dict_index:question_template.id|length %}&#13;&#10;&#13;&#10;{% endif %}{% endfor %}">Many vehicles...</i>
+                        <i class="has-tooltip has-tooltipl-multiline has-tooltip-right" data-tooltip="{% for vehicle in vehicles|dict_index:question_template.id %}{{ vehicle.name }}{% if forloop.counter < vehicles|dict_index:question_template.id|length %}&#13;&#10;&#13;&#10;{% endif %}{% endfor %}">...</i>
                         {% endif %}
                     </td>
                     <td><a href="{% url 'main-question_update' model_id=question_template.id %}?next={% url 'main-question' %}" class="button is-link is-outlined">Edit</a></td>

@@ -93,6 +93,30 @@
                         </div>
                     </div>
 
+                    <div class="navbar-item has-dropdown is-hoverable">
+                        <a class="navbar-link">
+                            Question Types
+                        </a>
+
+                        <div class="navbar-dropdown">
+                            {% for question_type in base_question_types %}
+                            <a class="navbar-item" href="{% url 'main-question_type_update' model_id=question_type.id %}">{{ question_type.name }}</a>
+                            {% endfor %}
+                            <hr class="navbar-divider">
+                            <a class="navbar-item" href="{% url 'main-question_type_add' %}">Add</a>
+                        </div>
+                    </div>
+
+                    <div class="navbar-item has-dropdown is-hoverable">
+                        <a class="navbar-link">
+                            Extras
+                        </a>
+
+                        <div class="navbar-dropdown">
+                            <a class="navbar-item" href="{% url 'user-register' %}">Register User</a>
+                        </div>
+                    </div>
+
                     {% endif %}
                     {% if position_type == 4 %} {# su #}
                     <a class="navbar-item" href="{% url 'admin:index' %}">Admin</a>

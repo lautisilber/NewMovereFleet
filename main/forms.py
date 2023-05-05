@@ -1,10 +1,7 @@
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Union
 from django import forms
-from django.db.models.manager import Manager
-from django.db.models.query import QuerySet
-from .models import QuestionInstance, QuestionTemplate, Company, Vehicle
+from .models import QuestionInstance, QuestionTemplate, Company, Vehicle, QuestionType
 from django.utils.translation import gettext_lazy
-from django.forms import ModelChoiceField
 
 
 def _bulma_text_input():
@@ -40,7 +37,7 @@ def form_init_add_errors(form: Union[forms.Form, forms.ModelForm]):
 
 class CompanyForm(forms.ModelForm):
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         form_init_add_errors(self)
 
@@ -56,7 +53,7 @@ class CompanyForm(forms.ModelForm):
 
 class VehicleForm(forms.ModelForm):
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         form_init_add_errors(self)
 
@@ -84,19 +81,18 @@ class VehicleForm(forms.ModelForm):
 class QuestionForm(forms.ModelForm):
     # vehicles = VehicleModelChoiceField()
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         form_init_add_errors(self)
 
     class Meta:
         model = QuestionTemplate
-        fields = ['question', 'info', 'allow_notes', 'vehicles', 'question_type', 'periodicity_days', 'periodicity_anchor', 'periodicity_days_notice', 'position_type']
+        exclude = ['answer_sessions']
         labels = {
             'question': 'Question',
             'info': 'Info',
             'allow_notes': 'Allow notes',
             'vehicles': 'Vehicles',
-            'question_type': 'Question type',
             'periodicity_days': 'Periodicity days',
             'periodicity_anchor': 'Periodicity anchor',
             'periodicity_days_notice': 'Periodicity days notice',
@@ -144,4 +140,22 @@ class QuestionAnswerForm(forms.ModelForm):
             'answer': _bulma_checkbox(),
             'problem_description': _bulma_textarea(rows=3),
             'notes': _bulma_textarea(rows=3)
+        }
+
+
+class QuestionTypeForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        form_init_add_errors(self)
+
+    class Meta:
+        model = QuestionType
+        fields = ['name', 'periodicity']
+        labels = {
+            'name': 'Name',
+            'periodicity': 'Periodicity'
+        }
+        widgets = {
+            'name': _bulma_text_input(),
+            'periodicity': _bulma_checkbox()
         }

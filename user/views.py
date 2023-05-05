@@ -4,7 +4,6 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from .forms import UserRegisterForm
-from main.views import load_navbar_context
 
 # message.debug
 # message.info

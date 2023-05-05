@@ -3,6 +3,8 @@ import sys
 import inspect
 from django.db import models
 
+from .models import Vehicle, Company, QuestionType
+
 
 def get_all_classes_from_module(module: str) -> list[any]:
     classes = [obj for name, obj in inspect.getmembers(sys.modules[module]) if inspect.isclass(obj)]
@@ -23,7 +25,7 @@ from django.shortcuts import redirect, render
 from django.http import HttpRequest, HttpResponseNotFound, HttpResponseForbidden, HttpResponse
 from django import forms
 from django.contrib import messages
-from typing import Union
+from typing import Any, Union
 from django.db import models
 
 def model_view_create(request: HttpRequest, form_cls: type[forms.ModelForm]) -> Union[forms.ModelForm, HttpResponse]:

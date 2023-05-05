@@ -55,26 +55,21 @@ class Vehicle(models.Model):
 
 ### QUESTIONS ###
 
-class QuestionType(models.IntegerChoices):
-    GENERIC = 0, gettext_lazy('Generic')
-    GET_ON = 1, gettext_lazy('Get on')
-    GET_OFF = 2, gettext_lazy('Get off')
-    GET_ON_OFF = 3, gettext_lazy('Get on & Get off')
+class QuestionType(models.Model):
+    name = models.CharField(max_length=16, unique=True, null=False, blank=False)
+    periodicity = models.BooleanField(default=False, null=False, blank=False)
 
-    @classmethod
-    def get_type_from_int(cls, n: int):
-        if n == 1:
-            return cls.GET_ON
-        elif n == 2:
-            return cls.GET_OFF
-        elif n == 3:
-            return cls.GET_ON_OFF
-        return cls.GENERIC
+    def __repr__(self) -> str:
+        return f"QuestionType(name='{self.name}', periodicity={self.periodicity})"
+    
+    def __str__(self) -> str:
+        return self.name
+
 
 class QuestionAnswerSession(TimeStampMixin):
     user = models.ForeignKey(User, models.CASCADE, null=False, blank=False)
     vehicle = models.ForeignKey(Vehicle, models.CASCADE, null=False, blank=False)
-    session_type = models.SmallIntegerField(choices=QuestionType.choices, default=QuestionType.GENERIC, null=False)
+    question_types = models.ManyToManyField(QuestionType, blank=True)
 
     def __repr__(self) -> str:
         return f'QuestionAnswerSession(question_template_ids={[qt.id for qt in self.questiontemplate_set.all()]}, question_instance_ids={[qi.id for qi in self.questioninstance_set.all()]}, session_type={self.session_type})'
@@ -89,14 +84,15 @@ class QuestionTemplate(models.Model):
     question = models.CharField(max_length=32, null=False, blank=False)
     info = models.CharField(max_length=256, null=True, blank=True)
     allow_notes = models.BooleanField(default=False, null=False, blank=True)
-    vehicles = models.ManyToManyField(Vehicle, blank=True, null=True)
-    question_type = models.SmallIntegerField(choices=QuestionType.choices, default=QuestionType.GENERIC, null=False)
+    vehicles = models.ManyToManyField(Vehicle, blank=True)
+    question_types = models.ManyToManyField(QuestionType, blank=True)
+    position_type = models.SmallIntegerField(choices=Profile.PositionType.choices, default=Profile.PositionType.NOT_ASSIGNED, null=False) # TODO: no anda
+
     periodicity_days = models.IntegerField(default=0, null=False, blank=True) # cada cuantos dias debe ser completado. 0 significa que debe ser administrado por la persona que complete
     periodicity_anchor = models.DateField(null=True, blank=True) # a day to start counting from. if the periodicity is daily (periodicity_days = 0) this has no effect
     periodicity_days_notice = models.IntegerField(default=1, null=False, blank=True) # cuantos dias de changui para la persona que complete
-    position_type = models.SmallIntegerField(choices=Profile.PositionType.choices, default=Profile.PositionType.NOT_ASSIGNED, null=False) # TODO: no anda
 
-    answer_session = models.ManyToManyField(QuestionAnswerSession, blank=True, null=True)
+    answer_sessions = models.ManyToManyField(QuestionAnswerSession, blank=True)
 
     def should_be_instantiated(self, now_utc: Optional[datetime]=None) -> tuple[bool, int]:
         if now_utc is None:
@@ -117,7 +113,7 @@ class QuestionTemplate(models.Model):
         return f'QuestionTemplate(id={self.id}, question="{self.question}", allow_notes={self.allow_notes})'
     
     def __str__(self) -> str:
-        return 'Question tempate "{self.question}"'
+        return f'Question tempate "{self.question}"'
 
 
 class QuestionInstance(TimeStampMixin):
@@ -130,9 +126,9 @@ class QuestionInstance(TimeStampMixin):
     answer = models.BooleanField(null=False, default=None)
     problem_description = models.TextField(null=True, blank=True)
     notes = models.TextField(null=True, blank=True)
-    question_type = models.SmallIntegerField(choices=QuestionType.choices, default=QuestionType.GENERIC, null=False)
+    question_types = models.ManyToManyField(QuestionType, blank=True)
 
-    answer_session = models.ForeignKey(QuestionAnswerSession, models.SET_NULL, null=True, blank=True)
+    answer_sessions = models.ForeignKey(QuestionAnswerSession, models.SET_NULL, null=True, blank=True)
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
@@ -140,12 +136,16 @@ class QuestionInstance(TimeStampMixin):
             raise Exception("Can't instantiate QuestionInstance without a QuestionTemplate parameter")
         self.question = self.question_template.question
         self.position_type = self.question_template.position_type
+        self.question_type = self.question_template.question_type
 
     def __repr__(self) -> str:
         return f'QuestionInstance(id={self.id}, title={self.question_template.question if self.question_template else "None"}, answer={self.answer})'
     
     def __str__(self) -> str:
         return f'Question instance "{self.question}"'
+
+
+
 
 def create_question_instance(question_template: QuestionTemplate, vehicle: Vehicle, user: User) -> QuestionInstance:
     question_instance = QuestionInstance(question_template=question_template, vehicle=vehicle, user=user)
@@ -252,3 +252,59 @@ signals.pre_delete.connect(delete_question_instance, sender=QuestionInstance, we
 
 #     def __str__(self) -> str:
 #         return f'Repair(id={self.id}, part={self.part})'
+
+
+# class QuestionType(models.IntegerChoices):
+#     GENERIC = 2**0, gettext_lazy('Generic')
+#     GET_ON = 2**1, gettext_lazy('Get on')
+#     GET_OFF = 2**2, gettext_lazy('Get off')
+
+#     @classmethod
+#     def get_type_from_int(cls, n: int):
+#         if n == 'g':
+#             return cls.GENERIC
+#         elif n == 'n':
+#             return cls.GET_ON
+#         elif n == 'f':
+#             return cls.GET_OFF
+#         raise Exception(f'No enum correspondance to {n}')
+    
+#     @classmethod
+#     def min_val(cls) -> int:
+#         return cls.GENERIC.value
+    
+#     @classmethod
+#     def max_val(cls) -> int:
+#         return sum(elem.value for elem in cls)
+    
+#     @staticmethod
+#     def encode(values):
+#         if not values:
+#             return 0
+#         return sum(v.value for v in values)
+    
+#     @classmethod
+#     def decode(cls, number):
+#         return [v for v in cls if number & v.value]
+
+# class QuestionTypeField(models.IntegerField):
+#     def __init__(self, *args, **kwargs) -> None:
+#         super().__init__(default=[], null=False, blank=False, validators=[
+#             validators.MaxValueValidator(QuestionType.max_val()),
+#             validators.MinValueValidator(QuestionType.min_val())
+#         ])
+
+#     def get_prep_value(self, value):
+#         # from python to database
+#         if value is not None:
+#             value = QuestionType.encode(value)
+#         return super().get_prep_value(value)
+    
+#     def from_db_value(self, value, expression, connection, *args):
+#         # from database to python
+#         if value is None:
+#             return None
+#         if isinstance(value, int):
+#             return QuestionType.decode(value)
+#         else:
+#             raise exceptions.ValidationError('Bad db typing')
