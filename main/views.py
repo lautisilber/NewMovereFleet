@@ -275,6 +275,7 @@ def questions_answer_portal(request: HttpRequest, vehicle_id: int):
     if not Vehicle.objects.filter(id=vehicle_id).exists():
         return HttpResponseBadRequest(f'No vehicle was found with id {vehicle_id}')
     session_types = [t.value for t in QuestionType if QuestionTemplate.objects.filter(vehicles__id=vehicle_id, position_type=request.user.profile.position_type, question_type=t).exists()]
+    print(session_types)
     vehicle = Vehicle.objects.get(id=vehicle_id)
     context = {
         'vehicle': vehicle,
