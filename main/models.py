@@ -69,7 +69,7 @@ class QuestionType(models.Model):
 class QuestionAnswerSession(TimeStampMixin):
     user = models.ForeignKey(User, models.CASCADE, null=False, blank=False)
     vehicle = models.ForeignKey(Vehicle, models.CASCADE, null=False, blank=False)
-    question_types = models.ManyToManyField(QuestionType, blank=True)
+    question_type = models.ForeignKey(QuestionType, models.SET_NULL, null=True, blank=False)
 
     def __repr__(self) -> str:
         return f'QuestionAnswerSession(question_template_ids={[qt.id for qt in self.questiontemplate_set.all()]}, question_instance_ids={[qi.id for qi in self.questioninstance_set.all()]}, session_type={self.session_type})'
@@ -136,7 +136,6 @@ class QuestionInstance(TimeStampMixin):
             raise Exception("Can't instantiate QuestionInstance without a QuestionTemplate parameter")
         self.question = self.question_template.question
         self.position_type = self.question_template.position_type
-        self.question_type = self.question_template.question_type
 
     def __repr__(self) -> str:
         return f'QuestionInstance(id={self.id}, title={self.question_template.question if self.question_template else "None"}, answer={self.answer})'
@@ -153,13 +152,13 @@ def create_question_instance(question_template: QuestionTemplate, vehicle: Vehic
 
 def add_question_instance_to_session(answer_session: QuestionAnswerSession, question_template: QuestionTemplate) -> QuestionInstance:
     question_instance = create_question_instance(question_template, answer_session.vehicle, answer_session.user)
-    question_instance.answer_session = answer_session
+    question_instance.answer_sessions = answer_session
     return question_instance
 
-def create_answer_session(user: User, vehicle: Vehicle, session_type: int=QuestionType, now_utc: Optional[datetime]=None) -> QuestionAnswerSession:
-    question_templates = QuestionTemplate.objects.filter(position_type=user.profile.position_type, vehicles=vehicle, question_type=session_type).all()
+def create_answer_session(user: User, vehicle: Vehicle, question_type_id: int, now_utc: Optional[datetime]=None) -> QuestionAnswerSession:
+    question_templates = QuestionTemplate.objects.filter(position_type=user.profile.position_type, vehicles=vehicle, question_types__id=question_type_id).all()
     question_templates = [question_template for question_template in question_templates if question_template.should_be_instantiated(now_utc=now_utc)[0]]
-    session = QuestionAnswerSession(user=user, vehicle=vehicle, session_type=session_type)
+    session = QuestionAnswerSession(user=user, vehicle=vehicle, question_type_id=question_type_id)
     session.save() # for the relationships to work
     session.questiontemplate_set.add(*question_templates)
     return session

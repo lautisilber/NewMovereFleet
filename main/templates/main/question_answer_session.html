@@ -13,9 +13,13 @@
 <div class="container is-fluid">
     <progress class="progress is-primary" value="{{ curr_page|add:1 }}" max="{{ last_page|add:1 }}"></progress>
     <div class="box">
-        <h1 class="title">Question: {{ form.instance.question }}</h1>
-        <h2 class="subtitle">Vehiculo: {{ vehicle.name }}</h2>
-        {# action="{% url 'main-answer_session' vehicle_id=vehicle.id session_type=session_type page=curr_page %}" #}
+        <h1 class="title">{{ form.instance.question }}</h1>
+        <h2 class="subtitle">{{ vehicle.name }}</h2>
+        {% if form.instance.question_template %}
+        {% if form.instance.question_template.info|length > 0 %}
+        <textarea class="textarea" readonly rows="2">{{ form.instance.question_template.info }}</textarea>
+        {% endif %}
+        {% endif %}
         <form method="POST">
             {% csrf_token %}
             <fieldset>

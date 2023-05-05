@@ -28,7 +28,7 @@ urlpatterns = [
     # path('questions_answer/', views.questions_answer, name='main-questions_answer'),
     # path('question_answer/<int:vehicle_id>/<int:question_template_id>', views.question_answer, name='main-question_answer'),
     path('answer_session_portal/<int:vehicle_id>', views_answer_session.questions_answer_portal, name='main-answer_session_potral'),
-    path('answer_session/<int:vehicle_id>/<int:session_type>/<int:page>', views_answer_session.questions_answer_session, name='main-answer_session'),
+    path('answer_session/<int:vehicle_id>/<int:question_type>/<int:page>', views_answer_session.questions_answer_session, name='main-answer_session'),
 
     #path('api/<str:url_name>/<int:model_id>/', views.api_single, name='api-single'),
     #path('api/<str:url_name>/', views.api_multiple, name='api-multiple'),

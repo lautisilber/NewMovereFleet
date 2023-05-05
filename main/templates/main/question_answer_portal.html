@@ -5,9 +5,8 @@
 
 {% block content %}
 <div class="container m-3">
-    <div class="column"><a {% if 0 in session_types %}href="{% url 'main-answer_session' vehicle_id=vehicle.id session_type=0 page=0 %}"{% else %}disabled{% endif %} class="button is-link">{{ vehicle.name }} - Generic</a></div>
-    <div class="column"><a {% if 1 in session_types %}href="{% url 'main-answer_session' vehicle_id=vehicle.id session_type=1 page=0 %}"{% else %}disabled{% endif %} class="button is-link">{{ vehicle.name }} - Get On</a></div>
-    <div class="column"><a {% if 2 in session_types %}href="{% url 'main-answer_session' vehicle_id=vehicle.id session_type=2 page=0 %}"{% else %}disabled{% endif %} class="button is-link">{{ vehicle.name }} - Get Off</a></div>
-    <div class="column"><a {% if 3 in session_types %}href="{% url 'main-answer_session' vehicle_id=vehicle.id session_type=2 page=0 %}"{% else %}disabled{% endif %} class="button is-link">{{ vehicle.name }} - Get Off</a></div>
+    {% for question_type in session_types %}
+    <div class="column"><a href="{% url 'main-answer_session' vehicle_id=vehicle.id question_type=question_type.0 page=0 %}" class="button is-link">{{ question_type.1 }}</a></div>
+    {% endfor %}
 </div>
 {% endblock content %}
