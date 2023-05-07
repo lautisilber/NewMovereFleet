@@ -12,15 +12,18 @@ from .forms import UserRegisterForm
 # message.error
 
 def register(request: HttpRequest):
+    profile = False
+    if request.user.is_authenticated:
+        profile = request.user.profile.position_type >= 3
     if request.method == 'POST':
-        form = UserRegisterForm(request.POST)
+        form = UserRegisterForm(request.POST, profile=profile)
         if form.is_valid():
             form.save()
             username = form.cleaned_data.get('username')
             messages.success(request, f'Account created for {username}! Now you can log in')
-            return redirect('user-login')
+            return redirect(request.GET.get('next', 'user-login'))
     else:
-        form = UserRegisterForm()
+        form = UserRegisterForm(profile=profile)
     context = {
         'form': form
     }
@@ -29,5 +32,4 @@ def register(request: HttpRequest):
 
 @login_required
 def profile(request: HttpRequest):
-    context = load_navbar_context(request)
     return render(request, 'user/profile.html', context=context)

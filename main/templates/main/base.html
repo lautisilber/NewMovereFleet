@@ -109,11 +109,11 @@
 
                     <div class="navbar-item has-dropdown is-hoverable">
                         <a class="navbar-link">
-                            Extras
+                            Users
                         </a>
 
                         <div class="navbar-dropdown">
-                            <a class="navbar-item" href="{% url 'user-register' %}">Register User</a>
+                            <a class="navbar-item" href="{% url 'user-register' %}?next={% url 'main-home' %}">Register User</a>
                         </div>
                     </div>
 

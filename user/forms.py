@@ -3,14 +3,22 @@ from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 
+from .models import Profile
+
 
 class UserRegisterForm(UserCreationForm):
     error_css_class = 'is-danger'
     required_css_class = 'is-warning'
-    email = forms.EmailField(label='Email')
+    email = forms.EmailField(label='Email', required=False)
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
+        profile = False
+        if 'profile' in kwargs:
+            profile = kwargs['profile']
+            kwargs.pop('profile')
         super().__init__(*args, **kwargs)
+        if profile:
+                self.fields['position_type'] = forms.ChoiceField(choices=Profile.PositionType.choices)
         for field in self.fields:
             if 'class' in self[field].field.widget.attrs:
                 self[field].field.widget.attrs['class'] += ' input'
@@ -22,6 +30,16 @@ class UserRegisterForm(UserCreationForm):
     class Meta:
         model = User
         fields = ['username', 'email', 'password1', 'password2']
+    
+    def save(self):
+        instance = super().save(commit=True)
+        if 'position_type' in self.fields:
+            print(self.cleaned_data['position_type'])
+            instance.profile.position_type = self.cleaned_data['position_type']
+            instance.profile.save()
+        instance.save()
+        return instance
+
 
 
 class UserLoginForm(AuthenticationForm):
