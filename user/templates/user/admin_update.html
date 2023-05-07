@@ -1,0 +1,113 @@
+{% extends "main/base.html" %}
+
+{# Without the static tag, static files cannot be used #}
+{# {% load static%} #}
+{% load index %}
+
+{% block content %}
+<div class="container">
+    <div class="box">
+        <h1 class="title">Update User Information</h1>
+        <form method="POST" id="form">
+            {% csrf_token %}
+            <br>
+            <fieldset>
+                <br>
+    
+                {{ form.non_field_errors }}
+    
+                {% for hidden_field in form.hidden_fields %}
+                {{ hidden_field.errors }}
+                {{ hidden_field }}
+                {% endfor %}
+    
+                {% for field in form.visible_fields %}
+                <div class="field">
+                    {% if field.widget_type == 'checkbox' %}
+
+                    <div class="field">
+                        <div class="control">
+                            <label class="checkbox">
+                              <input type="checkbox" name="{{ field.name }}" id="{{ field.auto_id }}"{% if field.field.required %} required{% endif %}>
+                                {{ field.label }}
+                            </label>
+                        </div>
+                    </div>
+                    {% else %}
+                    <label class="label" for="{{ field.auto_id }}">{{ field.label }}</label>
+                    <div class="control">
+                        {% for error in field.errors %}
+                        <p class="help is-danger">{{ error }}</p>
+                        {% endfor %}
+                        {% if field.widget_type == 'select' %}
+                        <div class="select">
+                            {{ field }}
+                        </div>
+                        {% elif field.widget_type == 'selectmultiple' %}
+                        <div class="select is-multiple">
+                            {{ field }}
+                        </div>                    
+                        {% else %}
+                        {{ field }}
+                        {% endif %}
+                        {% if field.help_text %}
+                        <p class="help">{{ field.help_text }}</p>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </fieldset>
+            <br>
+            <div class="field is-grouped">
+                <div class="control">
+                    <button class="button is-link" id="open-update-modal" type="submit">Update</button>
+                </div>
+            </div>
+        </form>
+        <br>
+    </div>
+</div>
+<div id="modal-update" class="modal">
+    <div class="modal-background modal-closer"></div>
+    <div class="modal-content">
+        <header class="modal-card-head">
+            <p class="modal-card-title">Are you sure you want to update &ldquo;{{ form.instance.username }}&rdquo;</p>
+            <button class="update modal-closer" aria-label="close"></button>
+        </header>
+        <footer class="modal-card-foot">
+            <a class="button is-success" id="update-button">Update</a>
+            <button class="button modal-closer">Cancel</button>
+        </footer>
+    </div>
+</div>
+<script>
+    const form = document.getElementById('form');
+    document.getElementById('update-button').addEventListener('click', function() {
+        console.log('hi');
+        form.submit();
+    })
+    const modal = document.getElementById('modal-update');
+    document.getElementById('open-update-modal').addEventListener('click', function(event) {
+        event.preventDefault();
+        if (form.checkValidity())
+            modal.classList.add('is-active');
+        else
+            form.reportValidity();
+    })
+    function closeModal() {
+        modal.classList.remove('is-active');
+    }
+    Array.prototype.forEach.call(document.getElementsByClassName('modal-closer'), function(event) {
+        event.addEventListener('click', function() {
+            closeModal();
+        });
+    });
+    document.addEventListener('keydown', (event) => {
+        const e = event || window.event;
+        if (e.keyCode === 27) { // Escape key
+            closeModal();
+        }
+    });
+</script>
+{% endblock %}

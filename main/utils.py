@@ -3,8 +3,6 @@ import sys
 import inspect
 from django.db import models
 
-from .models import Vehicle, Company, QuestionType
-
 
 def get_all_classes_from_module(module: str) -> list[any]:
     classes = [obj for name, obj in inspect.getmembers(sys.modules[module]) if inspect.isclass(obj)]
@@ -26,9 +24,9 @@ from django.http import HttpRequest, HttpResponseNotFound, HttpResponseForbidden
 from django import forms
 from django.contrib import messages
 from typing import Any, Union
-from django.db import models
 
-def model_view_create(request: HttpRequest, form_cls: type[forms.ModelForm]) -> Union[forms.ModelForm, HttpResponse]:
+
+def model_view_create(request: HttpRequest, form_cls: type[forms.ModelForm], default_redirect: str='main-home') -> Union[forms.ModelForm, HttpResponse]:
     if request.user.profile.position_type < 3:
         return HttpResponseForbidden("You haven't got the rank to view this page")
     if request.method == 'POST':
@@ -36,12 +34,12 @@ def model_view_create(request: HttpRequest, form_cls: type[forms.ModelForm]) -> 
         if form.is_valid():
             form.save()
             messages.success(request, f'Created {form.Meta.model.__name__}!')
-            return redirect(request.GET.get('next', 'main-home'))
+            return redirect(request.GET.get('next', default_redirect))
     else:
         form = form_cls()
     return form
 
-def model_view_update(request: HttpRequest, form_cls: type[forms.ModelForm], model_id: int) -> Union[forms.ModelForm, HttpResponse]:
+def model_view_update(request: HttpRequest, form_cls: type[forms.ModelForm], model_id: int, default_redirect: str='main-home') -> Union[forms.ModelForm, HttpResponse]:
     if request.user.profile.position_type < 3:
         return HttpResponseForbidden("You haven't got the rank to view this page")
     model_cls = form_cls.Meta.model
@@ -53,12 +51,12 @@ def model_view_update(request: HttpRequest, form_cls: type[forms.ModelForm], mod
         if form.is_valid():
             form.save()
             messages.info(request, f'Updated {form.instance.__class__.__name__}!')
-            return redirect(request.GET.get('next', 'main-home'))
+            return redirect(request.GET.get('next', default_redirect))
     else:
         form = form_cls(instance=model)
     return form
 
-def model_view_delete(request: HttpRequest, model_cls: type[models.Model], model_id: int) -> HttpResponse:
+def model_view_delete(request: HttpRequest, model_cls: type[models.Model], model_id: int, default_redirect: str='main-home') -> HttpResponse:
     if request.user.profile.position_type < 3:
         return HttpResponseForbidden("You haven't got the rank to view this page")
     if not model_cls.objects.filter(id=model_id).exists():
@@ -66,7 +64,7 @@ def model_view_delete(request: HttpRequest, model_cls: type[models.Model], model
     model = model_cls.objects.get(id=model_id)
     model.delete()
     messages.error(request, f'Deleted {model.__class__.__name__}!')
-    return redirect(request.GET.get('next', 'main-home'))
+    return redirect(request.GET.get('next', default_redirect))
 
 def str_to_datetime(s: Union[str, None], accept_today: bool=True) -> Union[datetime, None]:
     if accept_today:

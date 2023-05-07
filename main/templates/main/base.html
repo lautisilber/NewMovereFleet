@@ -113,6 +113,10 @@
                         </a>
 
                         <div class="navbar-dropdown">
+                            <a href="{% url 'user-admin_update_list' position_type=1 %}" class="navbar-item">Drivers</a>
+                            <a href="{% url 'user-admin_update_list' position_type=2 %}" class="navbar-item">Mechanics</a>
+                            <a href="{% url 'user-admin_update_list' position_type=0 %}" class="navbar-item">Not assigned</a>
+                            <hr class="navbar-divider">
                             <a class="navbar-item" href="{% url 'user-register' %}?next={% url 'main-home' %}">Register User</a>
                         </div>
                     </div>

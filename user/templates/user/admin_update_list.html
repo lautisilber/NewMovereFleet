@@ -1,0 +1,29 @@
+{% extends "main/base.html" %}
+
+{# Without the static tag, static files cannot be used #}
+{# {% load static%} #}
+{% load index %}
+
+{% block content %}
+<div class="container">
+    <h1 class="title">{{ title }}</h1>
+    <div class="box">
+        <table class="table" id="{{ vehicle }}-table">
+            <thead>
+                <tr>
+                    <td>Username</td>
+                    <td>Edit</td>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>{{ user.username }}</td>
+                    <td><a href="{% url 'user-admin_update' user_id=user.id %}" class="button is-outlined is-primary">Edit</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

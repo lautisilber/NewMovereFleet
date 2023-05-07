@@ -1,7 +1,9 @@
 from django.http import HttpRequest
 from typing import Any
 
+from django.contrib.auth.models import User
 from .models import Vehicle, Company, QuestionType
+from user.models import Profile
 
 
 def load_navbar_context(request: HttpRequest) -> dict[str, Any]:
@@ -16,5 +18,6 @@ def load_navbar_context(request: HttpRequest) -> dict[str, Any]:
                 'base_vehicles': Vehicle.objects.all(),
                 'base_companies': Company.objects.all(),
                 'base_question_types': QuestionType.objects.all()
+                #'base_worker_types': #User.objects.filter(profile__position_type__lte=2).all()
             }
     return context
