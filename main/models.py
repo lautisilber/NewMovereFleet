@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any, Optional, Union
 from django.db import models
 from django.contrib.auth.models import User
 from user.models import Profile
@@ -94,13 +94,13 @@ class QuestionTemplate(models.Model):
 
     answer_sessions = models.ManyToManyField(QuestionAnswerSession, blank=True)
 
-    def should_be_instantiated(self, question_types: Optional[list[QuestionType]]=None, now_utc: Optional[datetime]=None) -> tuple[bool, int]:
+    def should_be_instantiated(self, question_types: Optional[list[QuestionType]]=None, now_utc: Optional[datetime]=None) -> tuple[bool, Union[int, None]]:
         if question_types is None:
             question_types = list(QuestionType.objects.all())
         if self.question_types.exists():
             intersection_question_types = [qt for qt in list(self.question_types.all()) if qt in question_types]
             if any(not qt.periodicity for qt in intersection_question_types): # has a type that doesn't take into account periodicity
-                return True
+                return True, None
         if now_utc is None:
             now_utc = datetime.now(timezone.utc)
         now_utc = now_utc.date()
