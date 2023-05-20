@@ -22,7 +22,7 @@
             {% if user.is_authenticated %}
             <div class="navbar-start">
                 {% with position_type=user.profile.position_type %}
-                    {% if position_type == 1 or position_type == 2 %} {# driver #}
+                    {% if position_type == 2 %} {# mechanic #}
                     <div class="navbar-item has-dropdown is-hoverable">
                         <a class="navbar-link">
                             Available Questions

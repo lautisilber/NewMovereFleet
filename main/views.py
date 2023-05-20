@@ -4,12 +4,16 @@ from django.http import HttpResponse, HttpRequest, HttpResponseForbidden, HttpRe
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods
 from django.contrib import messages
+from user.models import Profile
 
 
 
 
 
 def home(request: HttpRequest):
+    if request.user.is_authenticated:
+        if request.user.profile.position_type == Profile.PositionType.DRIVER:
+            return render(request, 'main/driver_home.html')
     return render(request, 'main/home.html')
 
 

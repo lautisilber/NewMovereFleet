@@ -66,33 +66,19 @@ class QuestionType(models.Model):
         return self.name
 
 
-class QuestionAnswerSession(TimeStampMixin):
-    user = models.ForeignKey(User, models.CASCADE, null=False, blank=False)
-    vehicle = models.ForeignKey(Vehicle, models.CASCADE, null=False, blank=False)
-    question_type = models.ForeignKey(QuestionType, models.SET_NULL, null=True, blank=False)
-
-    def __repr__(self) -> str:
-        return f'QuestionAnswerSession(question_template_ids={[qt.id for qt in self.questiontemplate_set.all()]}, question_instance_ids={[qi.id for qi in self.questioninstance_set.all()]}, session_type={self.session_type})'
-    
-    def __str__(self) -> str:
-        return f'Answer session {self.id}'
-
-
 class QuestionTemplate(models.Model):
     url_name = 'checklist_question_template'
 
     question = models.CharField(max_length=32, null=False, blank=False)
     info = models.CharField(max_length=256, null=True, blank=True)
     allow_notes = models.BooleanField(default=False, null=False, blank=True)
-    vehicles = models.ManyToManyField(Vehicle, blank=True)
-    question_types = models.ManyToManyField(QuestionType, blank=True)
+    vehicles = models.ManyToManyField(Vehicle, blank=True, related_name='question_templates', related_query_name='question_templates')
+    question_types = models.ManyToManyField(QuestionType, blank=True, related_name='question_templates', related_query_name='question_templates')
     position_type = models.SmallIntegerField(choices=Profile.PositionType.choices, default=Profile.PositionType.NOT_ASSIGNED, null=False) # TODO: no anda
 
     periodicity_days = models.IntegerField(default=0, null=False, blank=True) # cada cuantos dias debe ser completado. 0 significa que debe ser administrado por la persona que complete
     periodicity_anchor = models.DateField(null=True, blank=True) # a day to start counting from. if the periodicity is daily (periodicity_days = 0) this has no effect
     periodicity_days_notice = models.IntegerField(default=1, null=False, blank=True) # cuantos dias de changui para la persona que complete
-
-    answer_sessions = models.ManyToManyField(QuestionAnswerSession, blank=True)
 
     def should_be_instantiated(self, question_types: Optional[list[QuestionType]]=None, now_utc: Optional[datetime]=None) -> tuple[bool, Union[int, None]]:
         if question_types is None:
@@ -122,6 +108,20 @@ class QuestionTemplate(models.Model):
         return f'Question tempate "{self.question}"'
 
 
+class QuestionAnswerSession(TimeStampMixin):
+    user = models.ForeignKey(User, models.CASCADE, null=False, blank=False)
+    vehicle = models.ForeignKey(Vehicle, models.CASCADE, null=False, blank=False)
+    question_type = models.ForeignKey(QuestionType, models.SET_NULL, null=True, blank=False)
+    question_templates = models.ManyToManyField(QuestionTemplate, blank=True, related_name='answer_sessions', related_query_name='answer_sessions')
+    complete = models.BooleanField(null=False, blank=True, default=False)
+
+    def __repr__(self) -> str:
+        return f'QuestionAnswerSession(question_template_ids={[qt.id for qt in self.question_templates.all()]}, question_instance_ids={[qi.id for qi in self.question_instances.all()]}, question_type={self.question_type})'
+    
+    def __str__(self) -> str:
+        return f'Answer session {self.id}'
+
+
 class QuestionInstance(TimeStampMixin):
     url_name = 'checklist_question_instance'
 
@@ -132,24 +132,24 @@ class QuestionInstance(TimeStampMixin):
     answer = models.BooleanField(null=False, default=None)
     problem_description = models.TextField(null=True, blank=True)
     notes = models.TextField(null=True, blank=True)
-    question_types = models.ManyToManyField(QuestionType, blank=True)
-
-    answer_sessions = models.ForeignKey(QuestionAnswerSession, models.SET_NULL, null=True, blank=True)
+    question_types = models.ManyToManyField(QuestionType, blank=True, related_name='question_instances', related_query_name='question_instances')
+    answer_session = models.ForeignKey(QuestionAnswerSession, on_delete=models.CASCADE, null=True, related_name='answer_sessions', related_query_name='answer_sessions')
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         if self.question_template is None:
-            raise Exception("Can't instantiate QuestionInstance without a QuestionTemplate parameter")
-        self.question = self.question_template.question
-        self.position_type = self.question_template.position_type
+            #raise Exception("Can't instantiate QuestionInstance without a QuestionTemplate parameter")
+            self.question = None
+            self.position_type = None
+        else:
+            self.question = self.question_template.question
+            self.position_type = self.question_template.position_type
 
     def __repr__(self) -> str:
         return f'QuestionInstance(id={self.id}, title={self.question_template.question if self.question_template else "None"}, answer={self.answer})'
     
     def __str__(self) -> str:
         return f'Question instance "{self.question}"'
-
-
 
 
 def create_question_instance(question_template: QuestionTemplate, vehicle: Vehicle, user: User) -> QuestionInstance:
@@ -166,7 +166,7 @@ def create_answer_session(user: User, vehicle: Vehicle, question_type_id: int, n
     question_templates = [question_template for question_template in question_templates if question_template.should_be_instantiated(now_utc=now_utc)[0]]
     session = QuestionAnswerSession(user=user, vehicle=vehicle, question_type_id=question_type_id)
     session.save() # for the relationships to work
-    session.questiontemplate_set.add(*question_templates)
+    session.question_templates.add(*question_templates)
     return session
 
 

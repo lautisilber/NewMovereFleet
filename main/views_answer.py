@@ -17,7 +17,7 @@ from .models import QuestionInstance, QuestionType, Vehicle
 def answers(request: HttpRequest):
     if request.user.profile.position_type < 3:
         return HttpResponseForbidden("You haven't got the rank to view this page")
-    # TODO: apply filters though query parameters
+    # TODO: apply filters though query parameters (?)
     question_intsances = QuestionInstance.objects.filter(answer_sessions=None).order_by('-created_at').all()
 
     vehicles_ids = set()

@@ -1,0 +1,15 @@
+{% extends "main/base.html" %}
+
+{# Without the static tag, static files cannot be used #}
+{# {% load static%} #}
+
+{% block content %}
+<div class="container">
+    <h1 class="title">Home</h1>
+    <div class="container m-3">
+    {% for vehicle in base_vehicles %}
+        <a class="button is-link" href="{% url 'main-answer_session_potral' vehicle_id=vehicle.id %}">{{ vehicle.name }}</a>
+    {% endfor %}
+    </div>
+</div>
+{% endblock content %}
