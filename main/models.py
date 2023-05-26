@@ -160,10 +160,10 @@ def add_question_instance_to_session(answer_session: QuestionAnswerSession, ques
     question_instance.answer_session = answer_session
     return question_instance
 
-def create_answer_session(user: User, vehicle: Vehicle, question_type_id: int, now_utc: Optional[datetime]=None) -> QuestionAnswerSession:
-    question_templates = QuestionTemplate.objects.filter(position_type=user.profile.position_type, vehicles=vehicle, question_types__id=question_type_id).all()
+def create_answer_session(user: User, vehicle: Vehicle, question_type: int, now_utc: Optional[datetime]=None) -> QuestionAnswerSession:
+    question_templates = QuestionTemplate.objects.filter(position_type=user.profile.position_type, vehicles=vehicle, question_types__in=[question_type]).all()
     question_templates = [question_template for question_template in question_templates if question_template.should_be_instantiated(now_utc=now_utc)[0]]
-    session = QuestionAnswerSession(user=user, vehicle=vehicle, question_type_id=question_type_id)
+    session = QuestionAnswerSession(user=user, vehicle=vehicle, question_type=question_type)
     session.save() # for the relationships to work
     session.question_templates.add(*question_templates)
     return session
