@@ -58,16 +58,19 @@ def questions_answer_session(request: HttpRequest, vehicle_id: int, question_typ
             messages.info(request, 'Last answer session expired. Starting a new one.')
             active_session = None
     if active_session is None:
+        print('NEW session')
         active_session = create_answer_session(request.user, vehicle, question_type, now_utc)
     
     question_templates = list(active_session.question_templates.order_by('id').all())
     if page >= len(question_templates):
         return HttpResponseBadRequest(f'Page index parameter (= {page}) is to big for number of question templates available ()= {len(question_templates)})')
     question_template = question_templates[page]
-    if active_session.question_instances.filter(question_template=question_template).exists():
-        question_instance = active_session.questioninstance_set.get(question_template=question_template)
+    if QuestionInstance.objects.filter(answer_session=active_session, question_template=question_template).exists():
+        question_instance = QuestionInstance.objects.filter(answer_session=active_session, question_template=question_template)
     else:
+        print('New question')
         question_instance = add_question_instance_to_session(active_session, question_template)
+        print(active_session.question_instances)
 
     context = {
         'vehicle': vehicle,

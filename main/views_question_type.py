@@ -28,7 +28,6 @@ def create_question_type(request: HttpRequest):
 @login_required
 @require_http_methods(['GET', 'POST'])
 def update_question_type(request: HttpRequest, model_id: int):
-    print('hi')
     res = model_view_update(request, QuestionTypeForm, model_id)
 
     if isinstance(res, HttpResponse):

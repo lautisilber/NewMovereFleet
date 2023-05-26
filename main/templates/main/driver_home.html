@@ -8,7 +8,7 @@
     <h1 class="title">Home</h1>
     <div class="container m-3">
     {% for vehicle in base_vehicles %}
-        <a class="button is-link" href="{% url 'main-answer_session_potral' vehicle_id=vehicle.id %}">{{ vehicle.name }}</a>
+        <a class="button is-link" href="{% url 'main-answer_session_potral' vehicle_id=vehicle.id %}">{{ vehicle.name }}</a><br><br>
     {% endfor %}
     </div>
 </div>

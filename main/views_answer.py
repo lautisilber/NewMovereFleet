@@ -12,29 +12,48 @@ from .models import QuestionInstance, QuestionType, Vehicle
 
 
 
+# @login_required
+# @require_http_methods(['GET'])
+# def answers(request: HttpRequest):
+#     if request.user.profile.position_type < 3:
+#         return HttpResponseForbidden("You haven't got the rank to view this page")
+#     # TODO: apply filters though query parameters (?)
+#     question_instances = QuestionInstance.objects.filter(answer_session=None).order_by('-created_at').all()
+
+#     vehicles_ids = set()
+#     question_instances_without_vehicle = list()
+#     for question_intsance in question_instances:
+#         if question_intsance.vehicle:
+#             vehicles_ids.add(question_intsance.vehicle.id)
+#         else:
+#             question_instances_without_vehicle.append(question_intsance)
+#     question_instances = {}
+#     if vehicles_ids:
+#         vehicles = Vehicle.objects.filter(id__in=vehicles_ids).all()
+#         for vehicle in vehicles:
+#             question_instances[vehicle.name] = vehicle.question_instances.all()
+#     context = {
+#         'answer_instances': question_instances,
+#         'answer_instances_without_vehicle': question_instances_without_vehicle,
+#         'title': 'Answers',
+#         'question_types': QuestionType.objects.all(),
+#         'all_vehicles': Vehicle.objects.all()
+#     }
+#     return render(request, 'main/answers.html', context=context)
+
+
 @login_required
 @require_http_methods(['GET'])
 def answers(request: HttpRequest):
     if request.user.profile.position_type < 3:
         return HttpResponseForbidden("You haven't got the rank to view this page")
     # TODO: apply filters though query parameters (?)
-    question_intsances = QuestionInstance.objects.filter(answer_sessions=None).order_by('-created_at').all()
-
-    vehicles_ids = set()
-    question_intsances_without_vehicle = list()
-    for question_intsance in question_intsances:
-        if question_intsance.vehicle:
-            vehicles_ids.add(question_intsance.vehicle.id)
-        else:
-            question_intsances_without_vehicle.append(question_intsance)
-    question_intsances = {}
-    if vehicles_ids:
-        vehicles = Vehicle.objects.filter(id__in=vehicles_ids).all()
-        for vehicle in vehicles:
-            question_intsances[vehicle.name] = vehicle.questioninstance_set.all()
+    question_instances = {}
+    vehicles = Vehicle.objects.all()
+    for vehicle in vehicles:
+        question_instances[vehicle.name] = vehicle.question_instances.filter(answer_session=None).order_by('-created_at').all()
     context = {
-        'answer_instances': question_intsances,
-        'answer_instances_without_vehicle': question_intsances_without_vehicle,
+        'answer_instances': question_instances,
         'title': 'Answers',
         'question_types': QuestionType.objects.all(),
         'all_vehicles': Vehicle.objects.all()
@@ -65,7 +84,7 @@ def answer(request: HttpRequest, answer_id: int):
 #     if request.user.profile.position_type < 3:
 #         return HttpResponseForbidden("You haven't got the rank to view this page")
 #     # TODO: apply filters though query parameters
-#     all_question_intsances = QuestionInstance.objects.filter(answer_session=None)
+#     all_question_instances = QuestionInstance.objects.filter(answer_session=None)
 
 #     question_type = request.GET.get('question_type', None) # may be 0=generic, 1=get on, 2=get off, 3=get on & get off
 #     if question_type not in [None, '0', '1', '2', '3'] and question_type is not None:
@@ -73,7 +92,7 @@ def answer(request: HttpRequest, answer_id: int):
 #     if question_type is not None:
 #         question_type = int(question_type)
 #     if question_type is not None:
-#         all_question_intsances = all_question_intsances.filter(question_type=question_type)
+#         all_question_instances = all_question_instances.filter(question_type=question_type)
 
 #     time_to = request.GET.get('time_to', None) # may be today or a date formatted as yyyy-mm-dd
 #     time_from = request.GET.get('time_from', None) # may be a date formatted as yyyy-mm-dd
@@ -89,12 +108,12 @@ def answer(request: HttpRequest, answer_id: int):
 #     else:
 #         title = time_from_datetime.strftime("%d %b, %Y") + ' to ' + time_to_datetime.strftime("%d %b, %Y")
 
-#     all_question_intsances = all_question_intsances.order_by('created_at')
+#     all_question_instances = all_question_instances.order_by('created_at')
 #     if time_to_datetime:
 #         start = time_from_datetime if time_from_datetime else datetime(year=time_to_datetime.year, month=time_to_datetime.month, day=time_to_datetime.day)
-#         answer_instances = all_question_intsances.filter(created_at__range=(start, time_to_datetime)).all()
+#         answer_instances = all_question_instances.filter(created_at__range=(start, time_to_datetime)).all()
 #     else:
-#         answer_instances = all_question_intsances.all()
+#         answer_instances = all_question_instances.all()
 
 #     vehicles_ids = set()
 #     answer_instances_without_vehicle = list()

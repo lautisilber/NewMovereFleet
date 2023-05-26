@@ -3,8 +3,12 @@
 <html>
 
 <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
     <script src="{% static 'main/js/on_load.js' %}"></script>
+    <title>{{ Logistica }}</title> {# TODO: change this later #}
     {% block header %}{% endblock %}
 </head>
 
@@ -43,14 +47,7 @@
                         </a>
                         
                         <div class="navbar-dropdown">
-                            <a class="navbar-item" href="{% url 'main-answers' %}?time_to=today&question_type=3">Today's Get-on &amp; Get-off answers</a>
-                            <a class="navbar-item" href="{% url 'main-answers' %}?question_type=3">All-time Get-on &amp; Get-off answers</a>
-                            <hr class="navbar-divider">
-                            <a class="navbar-item" href="{% url 'main-answers' %}?question_type=0">Today's Generic answers</a>
-                            <a class="navbar-item" href="{% url 'main-answers' %}?question_type=0">All-time Generic answers</a>
-                            <hr class="navbar-divider">
                             <a class="navbar-item" href="{% url 'main-answers' %}">All Answers</a>
-                            <a class="navbar-item" href="{% url 'main-answers' %}?time=today">Today's Answers</a>
                         </div>
                     </div>
                     
@@ -61,6 +58,7 @@
 
                         <div class="navbar-dropdown">
                             <a class="navbar-item" href="{% url 'main-question' %}">Edit Questions</a>
+                            <hr class="navbar-divider">
                             <a class="navbar-item" href="{% url 'main-question_add' %}">Add</a>
                         </div>
                     </div>
@@ -208,7 +206,7 @@
 <footer>
     <br>
     <div class="container">
-        <small class="is-pulled-right mr-3">Version 0.1 &beta;</small>
+        <small class="is-pulled-right mr-3">Version 0.2 &beta;</small>
     </div>
 </footer>
 

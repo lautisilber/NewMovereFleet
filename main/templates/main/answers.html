@@ -64,15 +64,16 @@
                 <tr>
                     <td>Question</td>
                     <td>Answer</td>
-                    <td>Question Type</td>
                     <td>User</td>
                     <td>User profile</td>
+                    <td>Submission Date</td>
                     <td>Details</td>
                 </tr>
             </thead>
+            {% if answer_instances|dict_index:vehicle %}
             <tbody class="answers-body">
                 {% for answer_instance in answer_instances|dict_index:vehicle %}
-                <tr{% if not answer_instance.answer %} class="has-background-danger-light"{% else %} class="success-row"{% endif %} question_type="{{ answer_instance.question_type.name }}" creation-date="{{ answer_instance.created_at }}">
+                <tr class="answer-row {% if not answer_instance.answer %}has-background-danger-light{% else %}success-row{% endif %}" question-type="{{ answer_instance.question_type.name }}" creation-date="{{ answer_instance.created_at }}">
                     <td class="{% if not answer_instance.answer %}has-text-danger-dark{% else %}has-text-primary-dark{% endif %}">{{ answer_instance.question }}</td>
                     <td>
                         <div class="field">
@@ -80,20 +81,21 @@
                             <label for="{{ vehicle }}-{{ answer_instance.id }}-cb"></label>
                         </div>
                     </td>
-                    <td>Type</td>
                     <td>{{ answer_instance.user.username }}</td>
                     <td>{% if answer_instance.user.profile.position_type == 1 %}Driver{% elif answer_instance.user.profile.position_type == 2 %}Mechanic{% else %}...{% endif %}</td>
+                    <td>{{ answer_instance.created_at|date:"d/m/Y" }} {{ answer_instance.created_at|date:"H:i:s" }}</td>
                     <td><a href="{% url 'main-answer' answer_id=answer_instance.id %}" class="button is-outlined {% if not answer_instance.answer %}is-danger{% else %}is-primary{% endif %}">Details</a></td>
                 </tr>
                 {% endfor %}
             </tbody>
+            {% endif %}
         </table>
         {% endfor %}
     </div>
 </div>
 <script>
     const tables = {
-        {% for vehicle in answer_instances %}"{{ vehicle }}-table": document.getElementById("{{ vehicle }}-table"),{% endfor %}
+        {% for vehicle in all_vehicles %}"{{ vehicle }}-table": document.getElementById("{{ vehicle }}-table"),{% endfor %}
     };
 
     function showTable(table_id) {
@@ -129,14 +131,15 @@
             }
         })
     }
-    function showByType(questionTypeName, state) {
-        Array.prototype.slice.call(document.querySelectorAll('tr[question_type="'+questionTypeName+'""]'), 0).forEach(function(elem) {
-            if (state) {
+    const answerRows = Array.prototype.slice.call(document.getElementsByClassName('answer-row'), 0);
+    function showByType(questionTypeName='All') {
+        answerRows.forEach(function(elem) {
+            if (questionTypeName == 'All' || elem.getAttribute('question-type') == questionTypeName) {
                 elem.removeAttribute('hidden', '');
             } else {
                 elem.setAttribute('hidden', '');
             }
-        })
+        });
     }
     const onlyFalseSwitch = document.getElementById('switch-only-false');
     onlyFalseSwitch.addEventListener('change', function(evt) {
@@ -167,11 +170,13 @@
     const questionTypeSelect = document.getElementById('question-type-select');
     onLoad(function() {
         var accordions = bulmaAccordion.attach();
-        document.getElementById('date-range-button').addEventListener('click', reload);
+        //document.getElementById('date-range-button').addEventListener('click', reload);
         questionTypeSelect.addEventListener('change', function() {
-
+            console.log('CHANGE');
+            const questionType = questionTypeSelect.value;
+            showByType(questionType);
         });
     });
+    `{{ answer_instances }}`
 </script>
-
 {% endblock content %}

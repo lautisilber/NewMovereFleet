@@ -11,7 +11,7 @@ def load_navbar_context(request: HttpRequest) -> dict[str, Any]:
     if request.user.is_authenticated:
         if request.user.profile.position_type == 1 or request.user.profile.position_type == 2:
             context = {
-                'base_vehicles': sorted(list(set(Vehicle.objects.filter(questiontemplate__position_type=request.user.profile.position_type).all())), key=lambda v: v.id) # TODO: make this more efficient
+                'base_vehicles': sorted(list(set(Vehicle.objects.filter(question_templates__position_type=request.user.profile.position_type).all())), key=lambda v: v.id) # TODO: make this more efficient
             }
         elif request.user.profile.position_type >= 3:
             context = {

@@ -1,7 +1,8 @@
 {% extends "main/base.html" %}
 
 {# Without the static tag, static files cannot be used #}
-{% load static%}
+{% load static %}
+{% load index %}
 
 {% block header %}
 <link rel="stylesheet" href="{% static 'main/css/bulma-checkradio.min.css' %}">
@@ -30,7 +31,7 @@
                     <div class="field">
                         <div class="control">
                             <label class="checkbox">
-                              <input type="checkbox" name="{{ field.name }}" id="{{ field.auto_id }}"{% if field.field.required %} required{% endif %}>
+                                <input type="checkbox" name="{{ field.name }}" id="{{ field.auto_id }}"{% if field.field.required %} required{% endif %}{% for attr in field.field.widget.attrs %} {{ attr }}="{{ field.field.widget.attrs|dict_index:attr }}"{% endfor %}>
                                 {{ field.label }}
                             </label>
                         </div>
@@ -81,22 +82,33 @@
     </div>
 </div>
 <script>
+    const periodicities = {
+        {% for p_id in periodicities %}
+        {{ p_id }}: ('{{ periodicities|dict_index:p_id }}' == 'True' ? true : false),
+        {% endfor %}
+    };
     const periodicityElems = ['id_periodicity_days', 'id_periodicity_anchor', 'id_periodicity_days_notice'].map(function(e) {
         return document.getElementById(e);
     });
-    function disablePeriodicity(state) {
+    const questionTypeSelect = document.getElementById('id_question_types');
+    function checkPeriodicity() {
+        const ids = Array.prototype.slice.call(questionTypeSelect.querySelectorAll('option:checked'),0).map(function(e) { return e.value; });
+        let state = false;
+        for (let i = 0; i < ids.length; i++) {
+            if (periodicities[ids[i]]) {
+                state = true;
+                break;
+            }
+        }
         periodicityElems.forEach(function(elem) {
             if (state)
-                elem.setAttribute('disabled', '');
-            else
                 elem.removeAttribute('disabled');
+            else
+                elem.setAttribute('disabled', '');
         });
     }
-    const questionTypeSelect = document.getElementById('id_question_type');
-    questionTypeSelect.addEventListener('change', function(evt) {
-        disablePeriodicity(evt.target.value != 0);
-    });
-    disablePeriodicity(questionTypeSelect.value != 0);
+    questionTypeSelect.addEventListener('change', checkPeriodicity);
+    checkPeriodicity();
 </script>
 {% if model %}
 <div id="modal-delete" class="modal">

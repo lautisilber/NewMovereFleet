@@ -6,7 +6,7 @@ from django.contrib import messages
 
 from .utils import model_view_create, model_view_update, model_view_delete
 from .forms import QuestionForm
-from .models import QuestionTemplate
+from .models import QuestionTemplate, QuestionType
 
 
 
@@ -24,6 +24,7 @@ def create_question(request: HttpRequest):
         'set_input_dates_now': True,
         'form': res
     }
+    print(any(e[0] for e in res.instance.question_tepmlate.question_types.values_list('periodicity')))
     return render(request, 'main/question_edit.html', context=context)
 
 
@@ -35,13 +36,16 @@ def update_question(request: HttpRequest, model_id: int):
     if isinstance(res, HttpResponse):
         return res
 
+    periodicities = {t.id:t.periodicity for t in QuestionType.objects.all()}
     context = {
         'title': 'Update Question',
         'ok_button_text': 'Update',
         'model': res.instance,
         'set_input_dates_now': False,
         #'url_name': QuestionTemplate.url_name,
-        'form': res
+        'form': res,
+        #'periodicity': any(e[0] for e in res.instance.question_types.values_list('periodicity'))
+        'periodicities': periodicities
     }
     return render(request, 'main/question_edit.html', context=context)
 

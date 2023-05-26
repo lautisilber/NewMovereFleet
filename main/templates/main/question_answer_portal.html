@@ -4,9 +4,11 @@
 {# {% load static%} #}
 
 {% block content %}
-<div class="container m-3">
-    {% for question_type in session_types %}
-    <div class="column"><a href="{% url 'main-answer_session' vehicle_id=vehicle.id question_type=question_type.0 page=0 %}" class="button is-link">{{ question_type.1 }}</a></div>
-    {% endfor %}
+<div class="container">
+    <div class="container m-3">
+        {% for question_type in session_types %}
+        <div class="column"><a href="{% url 'main-answer_session' vehicle_id=vehicle.id question_type=question_type.0 page=0 %}" class="button is-link">{{ question_type.1 }}</a></div>
+        {% endfor %}
+    </div>
 </div>
 {% endblock content %}
