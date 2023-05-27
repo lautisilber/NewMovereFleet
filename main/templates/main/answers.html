@@ -1,14 +1,13 @@
 {% extends "main/base.html" %}
 
 {# Without the static tag, static files cannot be used #}
-{% load static%}
+{% load static %}
 {% load index %}
 
 {% block header %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma-switch@2.0.4/dist/css/bulma-switch.min.css">
 <script src="https://cdn.jsdelivr.net/npm/bulma-accordion@2.0.1/dist/js/bulma-accordion.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma-accordion@2.0.1/dist/css/bulma-accordion.min.css">
-<script src="{% static 'main/js/on_load.js' %}"></script>
 <script src="{% static 'main/js/date_simple_string.js' %}"></script>
 {% endblock %}
 
@@ -113,7 +112,6 @@
         console.log(event.target.value);
         showTable(event.target.value+'-table');
     });
-    showTable(vehicleSelect.value+'-table');
 
     Array.prototype.forEach.call(document.getElementsByClassName('question-answer-cb'), function(elem) {
         elem.addEventListener('click', function(evt) {
@@ -129,7 +127,7 @@
             } else {
                 elem.setAttribute('hidden', '');
             }
-        })
+        });
     }
     const answerRows = Array.prototype.slice.call(document.getElementsByClassName('answer-row'), 0);
     function showByType(questionTypeName='All') {
@@ -144,8 +142,7 @@
     const onlyFalseSwitch = document.getElementById('switch-only-false');
     onlyFalseSwitch.addEventListener('change', function(evt) {
         showSuccesses(!evt.target.checked);
-    })
-    showSuccesses(!onlyFalseSwitch.checked);
+    });
 
     function addDays(date, days) {
         var result = new Date(date.valueOf());
@@ -159,16 +156,19 @@
     {% if time_to %}
     dateToInput.value = "{{ time_to }}";
     {% else %}
-    dateToInput.value = (addDays(new Date(), 1)).simpleString()
+    dateToInput.value = (addDays(new Date(), 1)).simpleString();
     {% endif %}
     {% if time_from %}
     dateFromInput.value = "{{ time_from }}";
     {% else %}
-    dateFromInput.value = (new Date()).simpleString()
+    dateFromInput.value = (new Date()).simpleString();
     {% endif %}
 
     const questionTypeSelect = document.getElementById('question-type-select');
     onLoad(function() {
+        showTable(vehicleSelect.value+'-table');
+        showSuccesses(!onlyFalseSwitch.checked);
+
         var accordions = bulmaAccordion.attach();
         //document.getElementById('date-range-button').addEventListener('click', reload);
         questionTypeSelect.addEventListener('change', function() {
@@ -177,6 +177,5 @@
             showByType(questionType);
         });
     });
-    `{{ answer_instances }}`
 </script>
 {% endblock content %}

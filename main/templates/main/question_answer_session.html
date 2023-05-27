@@ -1,7 +1,7 @@
 {% extends "main/base.html" %}
 
 {# Without the static tag, static files cannot be used #}
-{% load static%}
+{% load static %}
 
 {% block header %}
 <!-- <link rel="stylesheet" href="{% static 'main/css/bulma-checkradio.min.css' %}"> -->
@@ -45,6 +45,16 @@
                             </label>
                         </div>
                     </div>
+                    {% elif field.widget_type == 'radioselect' %}
+                    <div id="radio-buttons">
+                    <label class="label" for="{{ field.name }}_id">{{ field.label }}</label>
+                    {% for radio in field %}
+                    <div><label for="{{ radio.id_for_label }}" class="radio-label">
+                        <span class="radio">{{ radio.tag }}</span>
+                        {{ radio.choice_label }}
+                    </label></div>
+                    {% endfor %}
+                    </div>
                     {% else %}
                     <label class="label" for="{{ field.auto_id }}">{{ field.label }}</label>
                     <div class="control">
@@ -85,41 +95,30 @@
     </div>
 </div>
 <script>
-    const problem_description = document.getElementById('id_problem_description');
-    const answer = document.getElementById('id_answer');
+    const problemDescription = document.getElementById('id_problem_description');
 
-    function allowProblemDescription(val) {
-        if (val) {
-            problem_description.setAttribute('disabled', 'true');
+    function allowProblemDescription(state) {
+        if (state) {
+            problemDescription.removeAttribute('disabled');
         } else {
-            problem_description.removeAttribute('disabled');
+            problemDescription.setAttribute('disabled', 'true');
         }
     }
 
-    allowProblemDescription(answer.checked);
-    answer.addEventListener('change', function() {
-        allowProblemDescription(answer.checked)
+    const radioButtonsParent = document.getElementById('radio-buttons');
+    document.querySelectorAll('input[type="radio"]').forEach(function(e) {
+        e.addEventListener('click', function(evt) {
+            checkedValue = radioButtonsParent.querySelector('input[type="radio"]:checked').value;
+            allowProblemDescription(checkedValue == "False");
+        });
     });
 
     function goBack() {
         window.location.href = window.location.href.split('?')[0] + '?page={{ curr_page|add:-1 }}';
     }
-    
+
+    onLoad(function() {
+        allowProblemDescription(false);
+    });
 </script>
 {% endblock %}
-
-{#
-    function onSubmit(e, backward=false) {
-        e.preventDefault();
-        if (answer.checked) {
-            problem_description.value = '';
-        }
-        const form = document.getElementsByTagName('form')[0];
-        if (backward) {
-            form.action = location.href + `?next_page=${}`;
-
-        }
-        console.log(form.action);
-        //form.requestSubmit();
-    }
-#}

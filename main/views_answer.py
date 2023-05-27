@@ -51,7 +51,8 @@ def answers(request: HttpRequest):
     question_instances = {}
     vehicles = Vehicle.objects.all()
     for vehicle in vehicles:
-        question_instances[vehicle.name] = vehicle.question_instances.filter(answer_session=None).order_by('-created_at').all()
+        question_instances[vehicle.name] = vehicle.question_instances.filter(answer_session__complete=True).order_by('-created_at').all()
+    print(question_instances)
     context = {
         'answer_instances': question_instances,
         'title': 'Answers',

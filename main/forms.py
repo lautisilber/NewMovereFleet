@@ -7,6 +7,7 @@ from django.forms.utils import ErrorList
 from django.forms.widgets import Widget
 from .models import QuestionInstance, QuestionTemplate, Company, Vehicle, QuestionType
 from django.utils.translation import gettext_lazy
+from django.core.exceptions import ValidationError
 
 
 def _bulma_text_input():
@@ -116,37 +117,6 @@ class QuestionForm(ModelFormWCheckbox):
             'periodicity_days_notice': _bulma_number_input()
         }
 
-class AnswerField(forms.BooleanField):
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-        self.widget = forms.Select(choices=(
-            (None, 'Elige una opción'),
-            (True, 'Si'),
-            (False, 'No')
-        ))
-        self.required = True
-        #self.validators.append(AnswerField.validator)
-
-    def to_python(self, value):
-        if value == 'True':
-            return True
-        elif value == 'False':
-            return False
-        return None
-
-    def prepare_value(self, value):
-        if value is True:
-            return 'True'
-        elif value is False:
-            return 'False'
-        return None
-    
-    # @staticmethod
-    # def validator(value):
-    #     if not (value is True or value is False):
-    #         raise forms.ValidationError("Tenés que elegir Si o No")
-
-
 class QuestionAnswerForm(ModelFormWCheckbox):
     def __init__(self, *args, **kwargs):
         readonly_kwarg = 'readonly'
@@ -161,7 +131,8 @@ class QuestionAnswerForm(ModelFormWCheckbox):
             self.fields['notes'].widget = self.fields['notes'].hidden_widget()
         
         if not readonly:
-            self.fields['answer'] = AnswerField()
+            # self.fields['answer'] = AnswerField()
+            self.fields['answer'] = forms.BooleanField(widget=forms.widgets.RadioSelect(choices=[(True, 'Si'),  (False, 'No')]))
 
     class Meta:
         model = QuestionInstance

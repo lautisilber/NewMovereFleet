@@ -108,7 +108,8 @@
         });
     }
     questionTypeSelect.addEventListener('change', checkPeriodicity);
-    checkPeriodicity();
+    
+    onLoad(checkPeriodicity);
 </script>
 {% if model %}
 <div id="modal-delete" class="modal">
