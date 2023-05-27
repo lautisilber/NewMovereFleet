@@ -9,6 +9,7 @@
 <script src="https://cdn.jsdelivr.net/npm/bulma-accordion@2.0.1/dist/js/bulma-accordion.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma-accordion@2.0.1/dist/css/bulma-accordion.min.css">
 <script src="{% static 'main/js/date_simple_string.js' %}"></script>
+<script src="{% static 'main/js/on_load.js' %}"></script>
 {% endblock %}
 
 {% block content %}
@@ -97,7 +98,9 @@
         {% for vehicle in all_vehicles %}"{{ vehicle }}-table": document.getElementById("{{ vehicle }}-table"),{% endfor %}
     };
 
-    function showTable(table_id) {
+    const vehicleSelect = document.getElementById('vehicle-select');
+    function showTable() {
+        const table_id = vehicleSelect.value+'-table'
         for (key in tables) {
             if (key == table_id) {
                 tables[key].removeAttribute('hidden');
@@ -107,10 +110,8 @@
         }
     }
 
-    const vehicleSelect = document.getElementById('vehicle-select');
     vehicleSelect.addEventListener("change", function(event) {
-        console.log(event.target.value);
-        showTable(event.target.value+'-table');
+        showTable();
     });
 
     Array.prototype.forEach.call(document.getElementsByClassName('question-answer-cb'), function(elem) {
@@ -165,6 +166,7 @@
 
     onLoad(function() {
         applyFilters();
+        showTable();
 
         var accordions = bulmaAccordion.attach();
     });
