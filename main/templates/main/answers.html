@@ -119,19 +119,6 @@
         });
     });
 
-    const successes = Array.prototype.slice.call(document.getElementsByClassName('success-row'), 0);
-    function showSuccesses(state) {
-        successes.forEach(function(elem) {
-            if (state) {
-                elem.removeAttribute('hidden', '');
-            } else {
-                elem.setAttribute('hidden', '');
-            }
-        });
-    }
-
-
-    
     const answerRows = Array.prototype.slice.call(document.getElementsByClassName('answer-row'), 0);
     function applyFilters() {
         const questionType = questionTypeSelect.value;
@@ -146,25 +133,13 @@
             }
         });
     }
-    function showByType(questionTypeName='--all--') {
-        answerRows.forEach(function(elem) {
-            console.log(questionTypeName)
-            if (questionTypeName == '--all--' || elem.getAttribute('question-type') == questionTypeName) {
-                elem.removeAttribute('hidden', '');
-            } else {
-                elem.setAttribute('hidden', '');
-            }
-        });
-    }
     const onlyFalseSwitch = document.getElementById('switch-only-false');
     onlyFalseSwitch.addEventListener('change', function(evt) {
-        // showSuccesses(!evt.target.checked);
         applyFilters();
     });
 
     const questionTypeSelect = document.getElementById('question-type-select');
     questionTypeSelect.addEventListener('change', function() {
-        // showByType(questionType);
         applyFilters();
     });
 
@@ -189,8 +164,7 @@
     {% endif %}
 
     onLoad(function() {
-        showTable(vehicleSelect.value+'-table');
-        showSuccesses(!onlyFalseSwitch.checked);
+        applyFilters();
 
         var accordions = bulmaAccordion.attach();
     });
