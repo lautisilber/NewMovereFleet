@@ -93,6 +93,7 @@
     const questionTypeSelect = document.getElementById('id_question_types');
     function checkPeriodicity() {
         const ids = Array.prototype.slice.call(questionTypeSelect.querySelectorAll('option:checked'),0).map(function(e) { return e.value; });
+        console.log(ids)
         let state = false;
         for (let i = 0; i < ids.length; i++) {
             if (periodicities[ids[i]]) {

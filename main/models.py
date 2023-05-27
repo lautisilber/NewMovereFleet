@@ -126,7 +126,7 @@ class QuestionInstance(TimeStampMixin):
     url_name = 'checklist_question_instance'
 
     question = models.CharField(max_length=32, null=False, blank=False)
-    question_template = models.ForeignKey(QuestionTemplate, models.SET_NULL, null=True, blank=False)
+    question_template = models.ForeignKey(QuestionTemplate, models.SET_NULL, null=True, blank=False, related_name='question_instances', related_query_name='question_instances')
     vehicle = models.ForeignKey(Vehicle, models.SET_NULL, null=True, blank=False, related_name='question_instances', related_query_name='question_instances')
     user = models.ForeignKey(User, models.SET_NULL, null=True, blank=False)
     answer = models.BooleanField(null=False, default=None)
