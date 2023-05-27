@@ -108,7 +108,7 @@ class QuestionTemplate(models.Model):
         return f'Question tempate "{self.question}"'
 
 
-class QuestionAnswerSession(TimeStampMixin):
+class AnswerSession(TimeStampMixin):
     user = models.ForeignKey(User, models.CASCADE, null=False, blank=False)
     vehicle = models.ForeignKey(Vehicle, models.CASCADE, null=False, blank=False, related_name='answer_sessions', related_query_name='answer_sessions')
     question_type = models.ForeignKey(QuestionType, models.SET_NULL, null=True, blank=False)
@@ -116,7 +116,7 @@ class QuestionAnswerSession(TimeStampMixin):
     complete = models.BooleanField(null=False, blank=True, default=False)
 
     def __repr__(self) -> str:
-        return f'QuestionAnswerSession(question_template_ids={[qt.id for qt in self.question_templates.all()]}, question_type={self.question_type})'
+        return f'AnswerSession(question_template_ids={[qt.id for qt in self.question_templates.all()]}, question_type={self.question_type}, completed={self.complete})'
     
     def __str__(self) -> str:
         return f'Answer session {self.id}'
@@ -132,7 +132,7 @@ class QuestionInstance(TimeStampMixin):
     answer = models.BooleanField(null=False, default=None)
     problem_description = models.TextField(null=True, blank=True)
     notes = models.TextField(null=True, blank=True)
-    answer_session = models.ForeignKey(QuestionAnswerSession, on_delete=models.CASCADE, null=True, related_name='question_instances', related_query_name='question_instances')
+    answer_session = models.ForeignKey(AnswerSession, on_delete=models.CASCADE, null=True, related_name='question_instances', related_query_name='question_instances')
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
@@ -155,28 +155,28 @@ def create_question_instance(question_template: QuestionTemplate, vehicle: Vehic
     question_instance = QuestionInstance(question_template=question_template, vehicle=vehicle, user=user)
     return question_instance
 
-def add_question_instance_to_session(answer_session: QuestionAnswerSession, question_template: QuestionTemplate) -> QuestionInstance:
+def add_question_instance_to_session(answer_session: AnswerSession, question_template: QuestionTemplate) -> QuestionInstance:
     question_instance = create_question_instance(question_template, answer_session.vehicle, answer_session.user)
     question_instance.answer_session = answer_session
     return question_instance
 
-def create_answer_session(user: User, vehicle: Vehicle, question_type: int, now_utc: Optional[datetime]=None) -> QuestionAnswerSession:
+def create_answer_session(user: User, vehicle: Vehicle, question_type: int, now_utc: Optional[datetime]=None) -> AnswerSession:
     question_templates = QuestionTemplate.objects.filter(position_type=user.profile.position_type, vehicles=vehicle, question_types__in=[question_type]).all()
     question_templates = [question_template for question_template in question_templates if question_template.should_be_instantiated(now_utc=now_utc)[0]]
-    session = QuestionAnswerSession(user=user, vehicle=vehicle, question_type=question_type)
+    session = AnswerSession(user=user, vehicle=vehicle, question_type=question_type)
     session.save() # for the relationships to work
     session.question_templates.add(*question_templates)
     return session
 
 
 def delete_question_template(sender, instance, using, **kwargs):
-    QuestionAnswerSession.objects.filter(questiontemplate__id=instance.id).delete()
+    AnswerSession.objects.filter(question_templates__id=instance.id).delete()
 
-def delete_question_instance(sender, instance, using, **kwargs):
-    QuestionAnswerSession.objects.filter(questioninstance__id=instance.id).delete()
+# def delete_answer_session(sender, instance, using, **kwargs):
+#     QuestionInstance.objects.filter(answer_session=instance).delete()
 
 signals.pre_delete.connect(delete_question_template, sender=QuestionTemplate, weak=False, dispatch_uid='main.models.delete_question_template')
-signals.pre_delete.connect(delete_question_instance, sender=QuestionInstance, weak=False, dispatch_uid='main.models.delete_question_instance')
+# signals.pre_delete.connect(delete_answer_session, sender=AnswerSession, weak=False, dispatch_uid='main.models.delete_answer_session')
 
 
 ### PARTS ###

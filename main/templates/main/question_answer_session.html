@@ -4,13 +4,14 @@
 {% load static%}
 
 {% block header %}
-<link rel="stylesheet" href="{% static 'main/css/bulma-checkradio.min.css' %}">
+<!-- <link rel="stylesheet" href="{% static 'main/css/bulma-checkradio.min.css' %}"> -->
 <script src="{% static 'main/js/on_load.js' %}"></script>
 {% endblock %}
 {% load index %}
 
 {% block content %}
 <div class="container is-fluid">
+    <span class="tag is-medium is-primary is-rounded">{{ curr_page|add:1 }}/{{ last_page|add:1 }}</span><br><br>
     <progress class="progress is-primary" value="{{ curr_page|add:1 }}" max="{{ last_page|add:1 }}"></progress>
     <div class="box">
         <h1 class="title">{{ form.instance.question }}</h1>
@@ -71,8 +72,13 @@
             </fieldset>
             <br>
             <div class="field is-grouped">
+                {% if curr_page > 0 %}
                 <div class="control">
-                    <button class="button is-primary" type="submit" id="submit-button">Next {{ curr_page|add:1 }}/{{ last_page|add:1 }}</button>
+                    <button class="button is-danger" type="button" id="submit-button" onclick="goBack()">Back</button>
+                </div>
+                {% endif %}
+                <div class="control">
+                    <button class="button is-primary" type="submit" id="submit-button">Next</button>
                 </div>
             </div>
         </form>
@@ -82,7 +88,7 @@
     const problem_description = document.getElementById('id_problem_description');
     const answer = document.getElementById('id_answer');
 
-    function allowProblemDescription(val){
+    function allowProblemDescription(val) {
         if (val) {
             problem_description.setAttribute('disabled', 'true');
         } else {
@@ -95,12 +101,25 @@
         allowProblemDescription(answer.checked)
     });
 
-    function onSubmit(e) {
+    function goBack() {
+        window.location.href = window.location.href.split('?')[0] + '?page={{ curr_page|add:-1 }}';
+    }
+    
+</script>
+{% endblock %}
+
+{#
+    function onSubmit(e, backward=false) {
         e.preventDefault();
         if (answer.checked) {
             problem_description.value = '';
         }
-        document.getElementsByTagName('form')[0].requestSubmit();
+        const form = document.getElementsByTagName('form')[0];
+        if (backward) {
+            form.action = location.href + `?next_page=${}`;
+
+        }
+        console.log(form.action);
+        //form.requestSubmit();
     }
-</script>
-{% endblock %}
+#}

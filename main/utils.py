@@ -23,7 +23,7 @@ from django.shortcuts import redirect, render
 from django.http import HttpRequest, HttpResponseNotFound, HttpResponseForbidden, HttpResponse
 from django import forms
 from django.contrib import messages
-from typing import Any, Union
+from typing import Any, Optional, Union
 
 
 def model_view_create(request: HttpRequest, form_cls: type[forms.ModelForm], default_redirect: str='main-home') -> Union[forms.ModelForm, HttpResponse]:
@@ -74,3 +74,23 @@ def str_to_datetime(s: Union[str, None], accept_today: bool=True) -> Union[datet
         return datetime.strptime(s, '%Y-%m-%d')
     except:
         return None
+
+
+from urllib.parse import urlencode
+from django.shortcuts import reverse, redirect
+
+def redirect_params(url, params=None, **kwargs):
+    query_params = ''
+    if params:
+        query_params += '?' + urlencode(params)
+    return redirect(reverse(url, kwargs=kwargs) + query_params)
+
+
+def dict_get(d: dict, value: Any, default: Any, type: Optional[type]=None) -> Any:
+    v = d.get(value, default)
+    if type is not None:
+        try:
+            v = type(v)
+        except Exception as err:
+            raise Exception(f'Could not cast dict value to type {type}\nError: {err}')
+    return v
