@@ -1,0 +1,10 @@
+[program:moverefleet]
+directory=/home/lautisilber/NewMovereFleet
+command=/home/lautisilber/NewMovereFleet/venv/bin/gunicorn -w=3 --bind=127.0.0.1:8000 --env DJANGO_SETTINGS_MODULE=MovereFleet.settings MovereFleet.wsgi:application --chdir /home/lautisilber/NewMovereFleet
+user=lautisilber
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+stderr_logfile=/var/log/moverefleet/moverefleet.err.log
+stdout_logfile=/var/log/moverefleet/moverefleet.out.log

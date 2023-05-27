@@ -1,3 +1,4 @@
-asgiref==3.6.0
+asgiref==3.7.1
 Django==4.2.1
-sqlparse==0.4.3
+django-select-multiple-field==0.4.2
+sqlparse==0.4.4
