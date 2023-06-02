@@ -42,6 +42,6 @@ signals.post_save.connect(create_user, sender=User, weak=False, dispatch_uid='us
 
 
 def delete_user(sender, instance, using, **kwargs):
-    instance.questionanswersession_set.all().delete()
+    instance.answer_sessions.all().delete()
 
 signals.pre_delete.connect(delete_user, sender=User, weak=False, dispatch_uid='user.models.delete_user')

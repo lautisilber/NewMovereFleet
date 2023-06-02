@@ -109,7 +109,7 @@ class QuestionTemplate(models.Model):
 
 
 class AnswerSession(TimeStampMixin):
-    user = models.ForeignKey(User, models.CASCADE, null=False, blank=False)
+    user = models.ForeignKey(User, models.CASCADE, null=False, blank=False, related_name='answer_sessions', related_query_name='answer_sessions')
     vehicle = models.ForeignKey(Vehicle, models.CASCADE, null=False, blank=False, related_name='answer_sessions', related_query_name='answer_sessions')
     question_type = models.ForeignKey(QuestionType, models.SET_NULL, null=True, blank=False)
     question_templates = models.ManyToManyField(QuestionTemplate, blank=True, related_name='answer_sessions', related_query_name='answer_sessions')
