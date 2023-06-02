@@ -33,7 +33,7 @@ def model_view_create(request: HttpRequest, form_cls: type[forms.ModelForm], def
         form = form_cls(request.POST)
         if form.is_valid():
             form.save()
-            messages.success(request, f'Created {form.Meta.model.__name__}!')
+            messages.success(request, f'{form.Meta.model.__name__} creado!')
             return redirect(request.GET.get('next', default_redirect))
     else:
         form = form_cls()
@@ -50,7 +50,7 @@ def model_view_update(request: HttpRequest, form_cls: type[forms.ModelForm], mod
         form = form_cls(request.POST, instance=model)
         if form.is_valid():
             form.save()
-            messages.info(request, f'Updated {form.instance.__class__.__name__}!')
+            messages.info(request, f'{form.instance.__class__.__name__} actualizado!')
             return redirect(request.GET.get('next', default_redirect))
     else:
         form = form_cls(instance=model)
@@ -63,7 +63,7 @@ def model_view_delete(request: HttpRequest, model_cls: type[models.Model], model
         return HttpResponseNotFound(f'The {model_cls.__name__} with id {model_id} was not found')
     model = model_cls.objects.get(id=model_id)
     model.delete()
-    messages.error(request, f'Deleted {model.__class__.__name__}!')
+    messages.error(request, f'{model.__class__.__name__} borrado!')
     return redirect(request.GET.get('next', default_redirect))
 
 def str_to_datetime(s: Union[str, None], accept_today: bool=True) -> Union[datetime, None]:

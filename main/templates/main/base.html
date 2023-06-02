@@ -101,7 +101,7 @@
                             <a class="navbar-item" href="{% url 'main-question_type_update' model_id=question_type.id %}">{{ question_type.name }}</a>
                             {% endfor %}
                             <hr class="navbar-divider">
-                            <a class="navbar-item" href="{% url 'main-question_type_add' %}">Add</a>
+                            <a class="navbar-item" href="{% url 'main-question_type_add' %}">Crear</a>
                         </div>
                     </div>
 
@@ -111,11 +111,11 @@
                         </a>
 
                         <div class="navbar-dropdown">
-                            <a href="{% url 'user-admin_update_list' position_type=1 %}" class="navbar-item">Drivers</a>
-                            <a href="{% url 'user-admin_update_list' position_type=2 %}" class="navbar-item">Mechanics</a>
-                            <a href="{% url 'user-admin_update_list' position_type=0 %}" class="navbar-item">Not assigned</a>
+                            <a href="{% url 'user-admin_update_list' position_type=1 %}" class="navbar-item">Choferes</a>
+                            <a href="{% url 'user-admin_update_list' position_type=2 %}" class="navbar-item">Mecánicos</a>
+                            <a href="{% url 'user-admin_update_list' position_type=0 %}" class="navbar-item">No asignados</a>
                             <hr class="navbar-divider">
-                            <a class="navbar-item" href="{% url 'user-register' %}?next={% url 'main-home' %}">Register User</a>
+                            <a class="navbar-item" href="{% url 'user-register' %}?next={% url 'main-home' %}">Registrar Usuari</a>
                         </div>
                     </div>
 
@@ -130,7 +130,7 @@
                 <div class="navbar-item">
                     <div class="buttons">
                         <a class="button is-light" href="{% url 'user-profile' %}">
-                            Profile
+                            Perfil
                         </a>
                         <a class="button is-link" href="{% url 'user-logout' %}?next={% url 'main-home' %}">
                             <strong>Cerrar sesión</strong>
@@ -147,7 +147,7 @@
                             Iniciar sesión
                         </a>
                         <a class="button is-primary" href="{% url 'user-register' %}">
-                            <strong>Sign Up</strong>
+                            <strong>Crear cuenta</strong>
                         </a>
                     </div>
                 </div>

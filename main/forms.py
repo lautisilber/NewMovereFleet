@@ -132,7 +132,7 @@ class QuestionAnswerForm(ModelFormWCheckbox):
         
         if not readonly:
             # self.fields['answer'] = AnswerField()
-            self.fields['answer'] = forms.BooleanField(widget=forms.widgets.RadioSelect(choices=[(True, 'Si'),  (False, 'No')]))
+            self.fields['answer'] = forms.BooleanField(widget=forms.widgets.RadioSelect(choices=[(True, 'Si'),  (False, 'No')]), label=gettext_lazy(QuestionAnswerForm.Meta.labels['answer']))
 
     class Meta:
         model = QuestionInstance

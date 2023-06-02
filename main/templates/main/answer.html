@@ -9,7 +9,8 @@
 <div class="container">
     <div class="box">
         <h1 class="title">Respuesta a {{ form.instance.question }}</h1>
-        <h2>For vehicle {{ form.instance.vehicle.name }}</h2>
+        <h2>Para vehículo {{ form.instance.vehicle.name }}</h2>
+        <br>
         <form method="POST" enctype="multipart/form-data">
             {% csrf_token %}
             <fieldset>

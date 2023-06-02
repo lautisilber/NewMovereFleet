@@ -95,7 +95,7 @@ def questions_answer_session(request: HttpRequest, vehicle_id: int, question_typ
             # last page
             active_session.complete = True
             active_session.save()
-            messages.success(request, 'You finished an answer session!')
+            messages.success(request, 'Terminaste el cuestionario!')
             return redirect(request.GET.get('next', 'main-home'))
     else:
         form = QuestionAnswerForm(instance=question_instance)

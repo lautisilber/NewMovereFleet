@@ -39,19 +39,9 @@
                         {% for error in field.errors %}
                         <p class="help is-danger">{{ error }}</p>
                         {% endfor %}
-                        {% if field.widget_type == 'select' %}
-                        <div class="select">
-                            {{ field }}
-                        </div>
-                        {% elif field.widget_type == 'selectmultiple' %}
-                        <div class="select is-multiple">
-                            {{ field }}
-                        </div>                    
-                        {% else %}
                         {{ field }}
-                        {% endif %}
                         {% if field.help_text %}
-                        <p class="help">{{ field.help_text }}</p>
+                        <div class="help">{{ field.help_text }}</div>
                         {% endif %}
                     </div>
                     {% endif %}

@@ -25,7 +25,7 @@
         </div>
         <div class="select mr-3">
             <select id="question-type-select">
-                <option value="--all--" selected>All</option>
+                <option value="--all--" selected>Todos</option>
                 {% for question_type in question_types %}
                 <option value="{{ question_type.name }}">{{ question_type.name }}</option>
                 {% endfor %}
@@ -84,7 +84,7 @@
                     <td>{{ answer_instance.user.username }}</td>
                     <td>{% if answer_instance.user.profile.position_type == 1 %}Driver{% elif answer_instance.user.profile.position_type == 2 %}Mechanic{% else %}...{% endif %}</td>
                     <td>{{ answer_instance.created_at|date:"d/m/Y" }} {{ answer_instance.created_at|date:"H:i:s" }}</td>
-                    <td><a href="{% url 'main-answer' answer_id=answer_instance.id %}" class="button is-outlined {% if not answer_instance.answer %}is-danger{% else %}is-primary{% endif %}">Details</a></td>
+                    <td><a href="{% url 'main-answer' answer_id=answer_instance.id %}" class="button is-outlined {% if not answer_instance.answer %}is-danger{% else %}is-primary{% endif %}">Info</a></td>
                 </tr>
                 {% endfor %}
             </tbody>
