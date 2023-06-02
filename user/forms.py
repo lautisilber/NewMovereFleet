@@ -30,6 +30,12 @@ class UserRegisterForm(UserCreationForm):
     class Meta:
         model = User
         fields = ['username', 'email', 'password1', 'password2']
+        labels = {
+            'username': 'Nombre de usuario',
+            'email': 'Email',
+            'password1': 'Contraseña',
+            'password2': 'Confirmar contraseña'
+        }
     
     def save(self):
         instance = super().save(commit=True)
@@ -61,6 +67,11 @@ class UserLoginForm(AuthenticationForm):
             if field == '__all__': continue
             self[field].field.widget.attrs['class'] += ' ' + UserLoginForm.error_css_class
 
+    labels = {
+        'username': 'Nombre de usuario',
+        'password': 'Contraseña'
+    }
+
 
 from main.forms import form_init_add_errors
 
@@ -85,9 +96,9 @@ class UserAdminUpdateForm(forms.ModelForm):
         model = User
         fields = ['username', 'email', 'password']
         labels = {
-            'username': 'Username',
+            'username': 'Nombre de usuario',
             'email': 'Email',
-            'password': 'Password'
+            'password': 'Contraseña'
         }
         widgets = {
             'username': forms.widgets.TextInput(attrs={'class': 'input'}),

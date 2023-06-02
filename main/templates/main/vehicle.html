@@ -49,7 +49,7 @@
                     <button class="button is-link is-outlined" type="submit">{{ ok_button_text }}</button>
                 </div>
                 <div class="control">
-                    <button id="open-delete-modal" class="button is-danger">Delete</button>
+                    <button id="open-delete-modal" class="button is-danger">Borrar</button>
                 </div>
             </div>
             {% else %}
@@ -67,12 +67,12 @@
     <div class="modal-background modal-closer"></div>
     <div class="modal-content">
         <header class="modal-card-head">
-            <p class="modal-card-title">Are you sure you want to delete &ldquo;{{ model.name }}&rdquo;</p>
+            <p class="modal-card-title">Seguro querés borrar el vehículo &ldquo;{{ model.name }}&rdquo;</p>
             <button class="delete modal-closer" aria-label="close"></button>
         </header>
         <footer class="modal-card-foot">
-            <a class="button is-danger" id="delete-button">Delete</a>
-            <button class="button modal-closer">Cancel</button>
+            <a class="button is-danger" id="delete-button">Borrar</a>
+            <button class="button modal-closer">Cancelar</button>
         </footer>
     </div>
 </div>
@@ -102,9 +102,6 @@
 </script>
 {% endif %}
 {% if set_input_dates_now %}
-    {# Without the static tag, static files cannot be used #}
-    {% load static %}
-
-    <script src="{% static 'main/js/set_dates_now.js' %}"></script>
+<script src="{% static 'main/js/set_dates_now.js' %}"></script>
 {% endif %}
 {% endblock %}

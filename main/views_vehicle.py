@@ -19,8 +19,8 @@ def create_vehicle(request: HttpRequest):
         return res
 
     context = {
-        'title': 'Create Vehicle',
-        'ok_button_text': 'Create',
+        'title': 'Crear Vehículo',
+        'ok_button_text': 'Crear',
         'form': res
     }
     return render(request, 'main/vehicle.html', context=context)
@@ -35,8 +35,8 @@ def update_vehicle(request: HttpRequest, model_id: int):
         return res
 
     context = {
-        'title': 'Update Vehicle',
-        'ok_button_text': 'Update',
+        'title': 'Editar vehículo',
+        'ok_button_text': 'Confirmar edición',
         'model': res.instance,
         'form': res
     }

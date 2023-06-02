@@ -18,8 +18,8 @@ def create_company(request: HttpRequest):
         return res
 
     context = {
-        'title': 'Create Company',
-        'ok_button_text': 'Create',
+        'title': 'Crear Company',
+        'ok_button_text': 'Crear',
         'form': res
     }
     return render(request, 'main/company.html', context=context)
@@ -34,8 +34,8 @@ def update_company(request: HttpRequest, model_id: int):
         return res
 
     context = {
-        'title': 'Update Company',
-        'ok_button_text': 'Update',
+        'title': 'Editar Company',
+        'ok_button_text': 'Confirmar edición',
         'model': res.instance,
         'form': res
     }

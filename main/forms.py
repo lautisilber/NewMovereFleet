@@ -65,7 +65,7 @@ class CompanyForm(ModelFormWCheckbox):
         model = Company
         fields = ['name']
         labels = {
-            'name': 'Name'
+            'name': 'Nombre'
         }
         widgets = {
             'name': _bulma_text_input()
@@ -77,10 +77,10 @@ class VehicleForm(ModelFormWCheckbox):
         model = Vehicle
         fields = ['name', 'mileage', 'fuel', 'company']
         labels = {
-            'name': 'Name',
-            'mileage': 'Mileage',
-            'fuel': 'Fuel',
-            'company': 'Company'
+            'name': 'Nombre',
+            'mileage': 'Kilometraje',
+            'fuel': 'Nafta',
+            'company': 'Compañía'
         }
         widgets = {
             'name': _bulma_text_input(),
@@ -99,14 +99,14 @@ class QuestionForm(ModelFormWCheckbox):
         model = QuestionTemplate
         exclude = ['answer_sessions']
         labels = {
-            'question': 'Question',
+            'question': 'Pregunta',
             'info': 'Info',
-            'allow_notes': 'Allow notes',
-            'vehicles': 'Vehicles',
-            'periodicity_days': 'Periodicity days',
-            'periodicity_anchor': 'Periodicity anchor',
-            'periodicity_days_notice': 'Periodicity days notice',
-            'position_type': 'Position type'
+            'allow_notes': 'Permitir notas',
+            'vehicles': 'Vehículos',
+            'periodicity_days': 'Periodicidad días',
+            'periodicity_anchor': 'Periodicidad ancla',
+            'periodicity_days_notice': 'Periodicidad días para responder',
+            'position_type': 'Rol del usuario que responde'
         }
         widgets = {
             'question': _bulma_text_input(),
@@ -138,9 +138,9 @@ class QuestionAnswerForm(ModelFormWCheckbox):
         model = QuestionInstance
         fields = ['answer', 'problem_description', 'notes']
         labels = {
-            'answer': 'Answer',
-            'problem_description': 'Problem description',
-            'notes': 'Notes'
+            'answer': 'Respuesta',
+            'problem_description': 'Descripción del problema',
+            'notes': 'Notas'
         }
         widgets = {
             'answer': _bulma_checkbox(),
@@ -154,8 +154,8 @@ class QuestionTypeForm(ModelFormWCheckbox):
         model = QuestionType
         fields = ['name', 'periodicity']
         labels = {
-            'name': 'Name',
-            'periodicity': 'Periodicity'
+            'name': 'Nombre',
+            'periodicity': 'Periodicidad'
         }
         widgets = {
             'name': _bulma_text_input(),

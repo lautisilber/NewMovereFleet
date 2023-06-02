@@ -43,29 +43,29 @@
                     {% if position_type >= 3 %} {# admin and su #}
                     <div class="navbar-item has-dropdown is-hoverable">
                         <a class="navbar-link">
-                            Answers
+                            Respuestas
                         </a>
                         
                         <div class="navbar-dropdown">
-                            <a class="navbar-item" href="{% url 'main-answers' %}">All Answers</a>
+                            <a class="navbar-item" href="{% url 'main-answers' %}">Todas las respuestas</a>
                         </div>
                     </div>
                     
                     <div class="navbar-item has-dropdown is-hoverable">
                         <a class="navbar-link">
-                            Questions
+                            Preguntas
                         </a>
 
                         <div class="navbar-dropdown">
-                            <a class="navbar-item" href="{% url 'main-question' %}">Edit Questions</a>
+                            <a class="navbar-item" href="{% url 'main-question' %}">Editar preguntas</a>
                             <hr class="navbar-divider">
-                            <a class="navbar-item" href="{% url 'main-question_add' %}">Add</a>
+                            <a class="navbar-item" href="{% url 'main-question_add' %}">Crear</a>
                         </div>
                     </div>
 
                     <div class="navbar-item has-dropdown is-hoverable">
                         <a class="navbar-link">
-                            Vehicles
+                            Vehículos
                         </a>
 
                         <div class="navbar-dropdown">
@@ -73,13 +73,13 @@
                             <a class="navbar-item" href="{% url 'main-vehicle_update' model_id=vehicle.id %}">{{ vehicle.name }}</a>
                             {% endfor %}
                             <hr class="navbar-divider">
-                            <a class="navbar-item" href="{% url 'main-vehicle_add' %}">Add</a>
+                            <a class="navbar-item" href="{% url 'main-vehicle_add' %}">Crear</a>
                         </div>
                     </div>
 
                     <div class="navbar-item has-dropdown is-hoverable">
                         <a class="navbar-link">
-                            Companies
+                            Compañías
                         </a>
 
                         <div class="navbar-dropdown">
@@ -87,13 +87,13 @@
                             <a class="navbar-item" href="{% url 'main-company_update' model_id=company.id %}">{{ company.name }}</a>
                             {% endfor %}
                             <hr class="navbar-divider">
-                            <a class="navbar-item" href="{% url 'main-company_add' %}">Add</a>
+                            <a class="navbar-item" href="{% url 'main-company_add' %}">Crear</a>
                         </div>
                     </div>
 
                     <div class="navbar-item has-dropdown is-hoverable">
                         <a class="navbar-link">
-                            Question Types
+                            Tipos de pregunta
                         </a>
 
                         <div class="navbar-dropdown">
@@ -107,7 +107,7 @@
 
                     <div class="navbar-item has-dropdown is-hoverable">
                         <a class="navbar-link">
-                            Users
+                            Usuarios
                         </a>
 
                         <div class="navbar-dropdown">
@@ -133,7 +133,7 @@
                             Profile
                         </a>
                         <a class="button is-link" href="{% url 'user-logout' %}?next={% url 'main-home' %}">
-                            <strong>Log Out</strong>
+                            <strong>Cerrar sesión</strong>
                         </a>
                     </div>
                 </div>
@@ -144,7 +144,7 @@
                 <div class="navbar-item">
                     <div class="buttons">
                         <a class="button is-light" href="{% url 'user-login' %}">
-                            Log in
+                            Iniciar sesión
                         </a>
                         <a class="button is-primary" href="{% url 'user-register' %}">
                             <strong>Sign Up</strong>
@@ -163,11 +163,6 @@
                 el.addEventListener('click', function() {
                     const targetId = el.dataset.target;
                     const target = document.getElementById(targetId);
-
-                    console.log('hi')
-                    console.log(el)
-                    console.log(target)
-
                     el.classList.toggle('is-active');
                     target.classList.toggle('is-active');
                 });

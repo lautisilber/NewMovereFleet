@@ -23,8 +23,8 @@ def create_question(request: HttpRequest):
         return res
 
     context = {
-        'title': 'Create Question',
-        'ok_button_text': 'Create',
+        'title': 'Crear pregunta',
+        'ok_button_text': 'Crear',
         'set_input_dates_now': True,
         'form': res,
         'periodicities': get_periodicities()
@@ -41,8 +41,8 @@ def update_question(request: HttpRequest, model_id: int):
         return res
 
     context = {
-        'title': 'Update Question',
-        'ok_button_text': 'Update',
+        'title': 'Editar pregunta',
+        'ok_button_text': 'Confirmar edición',
         'model': res.instance,
         'set_input_dates_now': False,
         #'url_name': QuestionTemplate.url_name,

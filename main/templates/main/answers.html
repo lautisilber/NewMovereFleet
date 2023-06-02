@@ -32,25 +32,25 @@
             </select>
         </div>
         <input id="switch-only-false" type="checkbox" name="switch-only-false" class="switch is-rounded is-danger" {% if not success_visibility %}checked="checked"{% endif %}>
-        <label for="switch-only-false">Show only failures</label>
+        <label for="switch-only-false">Mostrar solo negativos</label>
     </div>
 
     <section class="accordions">
         <article id="accordion-activator" class="accordion{% if accordion_active == True %} is-active{% endif %}">
             <div class="accordion-header toggle">
-                <p>Date range</p>
+                <p>Rango de fechas</p>
             </div>
             <div class="accordion-body">
                 <div class="accordion-content">
                     <div class="field">
-                        <label for="date-from">Time from</label>
+                        <label for="date-from">Desde</label>
                         <input type="date" name="date-from" id="date-from" class="input">
                     </div>
                     <div class="field">
-                        <label for="date-to">Time to</label><br>
+                        <label for="date-to">Hasta</label><br>
                         <input type="date" name="date-to" id="date-to" class="input">
                     </div>
-                    <button class="button" id="date-range-button">Search</button>
+                    <button class="button" id="date-range-button">Buscar</button>
                 </div>
             </div>
         </article>
@@ -62,12 +62,12 @@
         <table class="table" id="{{ vehicle }}-table">
             <thead>
                 <tr>
-                    <td>Question</td>
-                    <td>Answer</td>
-                    <td>User</td>
-                    <td>User profile</td>
-                    <td>Submission Date</td>
-                    <td>Details</td>
+                    <td>Pregunta</td>
+                    <td>Respuesta</td>
+                    <td>Usuario</td>
+                    <td>Perfil del usuario</td>
+                    <td>Fecha de envío</td>
+                    <td>Detalles</td>
                 </tr>
             </thead>
             {% if answer_instances|dict_index:vehicle %}

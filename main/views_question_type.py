@@ -18,8 +18,8 @@ def create_question_type(request: HttpRequest):
         return res
 
     context = {
-        'title': 'Create Question Type',
-        'ok_button_text': 'Create',
+        'title': 'Crear tipo de pregunta',
+        'ok_button_text': 'Crear',
         'form': res
     }
     return render(request, 'main/question_type.html', context=context)
@@ -34,8 +34,8 @@ def update_question_type(request: HttpRequest, model_id: int):
         return res
 
     context = {
-        'title': 'Update Question Type',
-        'ok_button_text': 'Update',
+        'title': 'Editar tipo de pregunta',
+        'ok_button_text': 'Confirmar edición',
         'model': res.instance,
         'form': res
     }

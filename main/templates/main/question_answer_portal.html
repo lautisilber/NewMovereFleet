@@ -1,11 +1,10 @@
 {% extends "main/base.html" %}
 
 {# Without the static tag, static files cannot be used #}
-{# {% load static%} #}
 
 {% block content %}
 <div class="mx-3">
-    <a class="button mb-3 is-rounded is-danger is-outlined is-small" href="{% url 'main-home' %}">Back</a>
+    <a class="button mb-3 is-rounded is-danger is-outlined is-small" href="{% url 'main-home' %}">Atrás</a>
     <h1 class="title">{{ vehicle.name }}</h1>
     <div class="box m-3">
     {% for question_type in session_types %}

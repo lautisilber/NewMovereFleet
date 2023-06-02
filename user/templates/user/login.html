@@ -7,7 +7,7 @@
 {% block content %}
 <div class="container">
     <div class="box">
-        <h1 class="title">Log In</h1>
+        <h1 class="title">Iniciar sesión</h1>
         <form method="POST">
             {% csrf_token %}
             <br>
@@ -61,13 +61,13 @@
             <br>
             <div class="field is-grouped">
                 <div class="control">
-                    <button class="button is-link" type="submit">Log In</button>
+                    <button class="button is-link" type="submit">Iniciar sesión</button>
                 </div>
             </div>
         </form>
         <div class="container">
             <small class="is-pulled-right">
-                Don't have and account? <a href="{% url 'user-register' %}">Sign Up</a>
+                ¿No tenés una cuenta? <a href="{% url 'user-register' %}">Crear cuenta</a>
             </small>
         </div>
         <br>

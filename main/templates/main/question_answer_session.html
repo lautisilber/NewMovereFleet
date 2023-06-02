@@ -7,8 +7,8 @@
 <!-- <link rel="stylesheet" href="{% static 'main/css/bulma-checkradio.min.css' %}"> -->
 <script src="{% static 'main/js/on_load.js' %}"></script>
 {% endblock %}
-{% load index %}
 
+{% load index %}
 {% block content %}
 <div class="container is-fluid">
     <span class="tag is-medium is-primary is-rounded">{{ curr_page|add:1 }}/{{ last_page|add:1 }}</span><br><br>
@@ -84,11 +84,11 @@
             <div class="field is-grouped">
                 {% if curr_page > 0 %}
                 <div class="control">
-                    <button class="button is-danger" type="button" id="submit-button" onclick="goBack()">Back</button>
+                    <button class="button is-danger" type="button" id="submit-button" onclick="goBack()">Atrás</button>
                 </div>
                 {% endif %}
                 <div class="control">
-                    <button class="button is-primary" type="submit" id="submit-button">Next</button>
+                    <button class="button is-primary" type="submit" id="submit-button">Siguiente</button>
                 </div>
             </div>
         </form>

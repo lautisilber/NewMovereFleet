@@ -32,13 +32,13 @@
                         {% endif %}
                     </td>
                     <td><a href="{% url 'main-question_update' model_id=question_template.id %}?next={% url 'main-question' %}" class="button is-link is-outlined">Edit</a></td>
-                    <td><button onclick="openDeleteModal({{ question_template.id }})" class="button is-danger is-outlined">Delete</button></td>
+                    <td><button onclick="openDeleteModal({{ question_template.id }})" class="button is-danger is-outlined">Borrar</button></td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
         <div>
-            <a href="{% url 'main-question_add' %}?next={% url 'main-question' %}" class="button is-primary">Add</a>
+            <a href="{% url 'main-question_add' %}?next={% url 'main-question' %}" class="button is-primary">Crear</a>
         </div>
     </div>
 </div>
@@ -46,12 +46,12 @@
     <div class="modal-background modal-closer"></div>
     <div class="modal-content">
         <header class="modal-card-head">
-            <p class="modal-card-title">Are you sure you want to delete &ldquo;<span id="modal-delete-title-question"></span>&rdquo;</p>
+            <p class="modal-card-title">Seguro querés borrar la pregunta &ldquo;<span id="modal-delete-title-question"></span>&rdquo;</p>
             <button class="delete modal-closer" aria-label="close"></button>
         </header>
         <footer class="modal-card-foot">
-            <a class="button is-danger" id="delete-button">Delete</a>
-            <button class="button modal-closer">Cancel</button>
+            <a class="button is-danger" id="delete-button">Borrar</a>
+            <button class="button modal-closer">Cancelar</button>
         </footer>
     </div>
 </div>
