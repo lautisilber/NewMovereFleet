@@ -5,17 +5,17 @@ from django.db.models import signals
 
 
 class Profile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, null=False)
     info = models.CharField(max_length=128, null=True, blank=True)
 
-    class PositionType(models.IntegerChoices):
-        NOT_ASSIGNED = 0, gettext_lazy('Not assigned')
-        DRIVER = 1, gettext_lazy('Driver')
-        MECHANIC = 2, gettext_lazy('Mechanic')
-        ADMINISTRATOR = 3, gettext_lazy('Administrator')
-        SUPERUSER = 4, gettext_lazy('Super user')
+    class PositionType(models.TextChoices):
+        NOT_ASSIGNED = 'N', gettext_lazy('Not assigned')
+        DRIVER = 'D', gettext_lazy('Driver')
+        MECHANIC = 'M', gettext_lazy('Mechanic')
+        ADMINISTRATOR = 'A', gettext_lazy('Administrator')
+        SUPERUSER = 'S', gettext_lazy('Super user')
 
-    position_type = models.SmallIntegerField(choices=PositionType.choices, default=PositionType.NOT_ASSIGNED, null=False)
+    position_type = models.CharField(max_length=1, choices=PositionType.choices, default=PositionType.NOT_ASSIGNED, null=False, blank=False)
 
     @classmethod
     def get_position_types(cls) -> list[tuple[str, str]]:
@@ -39,9 +39,3 @@ def create_user(sender, instance, created, **kwargs):
         Profile.objects.create(user=instance, **extra_info)
 
 signals.post_save.connect(create_user, sender=User, weak=False, dispatch_uid='user.models.create_user')
-
-
-def delete_user(sender, instance, using, **kwargs):
-    instance.answer_sessions.all().delete()
-
-signals.pre_delete.connect(delete_user, sender=User, weak=False, dispatch_uid='user.models.delete_user')

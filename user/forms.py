@@ -89,9 +89,6 @@ class UserLoginForm(AuthenticationForm):
         #         self.fields[l_k].label = l_v
         #         print(l_k, l_v, self.fields[l_k].label)
 
-
-from main.forms import form_init_add_errors
-
 class UserAdminUpdateForm(forms.ModelForm):
     error_css_class = 'is-danger'
     required_css_class = 'is-warning'
@@ -107,7 +104,6 @@ class UserAdminUpdateForm(forms.ModelForm):
             kwargs['initial'] = {'password': ''}
         kwargs['initial']['position_type'] = kwargs['instance'].profile.position_type
         super().__init__(*args, **kwargs)
-        form_init_add_errors(self)
 
     class Meta:
         model = User

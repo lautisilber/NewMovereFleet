@@ -5,12 +5,38 @@ from user.models import Profile
 from django.utils.translation import gettext_lazy
 from datetime import datetime, timedelta, timezone
 from django.db.models import signals
-
+from polymorphic.models import PolymorphicModel
+# PolymorphicModel replaces models.Model. It allows the following interaction:
+#
+#    class Project(PolymorphicModel):
+#        topic = models.CharField(max_length=30)
+#    
+#    class ArtProject(Project):
+#        artist = models.CharField(max_length=30)
+#    
+#    class ResearchProject(Project):
+#        supervisor = models.CharField(max_length=30)
+#    
+#    >>> Project.objects.create(topic="Department Party")
+#    >>> ArtProject.objects.create(topic="Painting with Tim", artist="T. Turner")
+#    >>> ResearchProject.objects.create(topic="Swallow Aerodynamics", supervisor="Dr. Winter")
+#    
+#    >>> Project.objects.all()
+#    [ <Project:         id 1, topic "Department Party">,
+#      <ArtProject:      id 2, topic "Painting with Tim", artist "T. Turner">,
+#      <ResearchProject: id 3, topic "Swallow Aerodynamics", supervisor "Dr. Winter"> ]
 
 
 class TimeStampMixin(models.Model):
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(name='Creado en', auto_now_add=True)
+    updated_at = models.DateTimeField(name='Actualizado en', auto_now=True)
+
+    class Meta:
+        abstract = True
+
+class TimeStampMixinPolymorphic(PolymorphicModel):
+    created_at = models.DateTimeField(name='Creado en', auto_now_add=True)
+    updated_at = models.DateTimeField(name='Actualizado en', auto_now=True)
 
     class Meta:
         abstract = True
@@ -18,9 +44,9 @@ class TimeStampMixin(models.Model):
 
 ### MACRO ###
 
-class Company(models.Model):
+class Company(TimeStampMixin):
     url_name = 'company'
-    name = models.CharField(max_length=64, null=False, unique=True)
+    name = models.CharField(max_length=64, null=False, unique=True, blank=False)
     info = models.CharField(max_length=256, null=True, blank=True)
 
     def __repr__(self) -> str:
@@ -29,286 +55,352 @@ class Company(models.Model):
     def __str__(self) -> str:
         return self.name
 
-# a vehicle is made out of parts
-# there are two kinds of parts
-# 1
-#   parts that need constant replacement and are supposed to be changed once in a while
-# 2
-#   parts that are not supposed to break but sometimes do
-# in addition to this, vehicles have quantities that need to be tracked, which are
-# part of hte vehicle model itself 
+class Vehicle(TimeStampMixin):
+    class Meta:
+        default_related_name = 'vehicles'
 
-class Vehicle(models.Model):
     url_name = 'vehicle'
-    name = models.CharField(max_length=128, null=False, unique=True)
-    mileage = models.PositiveIntegerField(default=0)
-    fuel = models.PositiveSmallIntegerField(default=0)
+    name = models.CharField(max_length=64, null=False, unique=True, blank=False)
+    km = models.PositiveIntegerField(default=0, null=False, blank=False)
+    fuel = models.PositiveSmallIntegerField(default=0, null=False, blank=False)
         
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=False, blank=False)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=False, blank=False, related_name='a1', related_query_name='a2')
     
     def __repr__(self) -> str:
         return f'Vehicle(id={self.id}, name={self.name})'
     
     def __str__(self) -> str:
         return self.name
+    
+### PARTS ###
+    
+class PartAbs(TimeStampMixinPolymorphic):
+    # should be meta, but is not, so that it can have relationships and, with polymorphic, act as a base class
+    # https://stackoverflow.com/questions/30343212/foreignkey-field-related-to-abstract-model-in-django
+
+    # class Meta:
+    #     abstract = True
+
+    name = models.CharField(max_length=64, null=False, unique=True, blank=False)
+
+class PartWithLifespanAbs(PartAbs):
+    change_frequency_timedelta = models.DurationField(name='Frecuencia cambio tiempo', null=True, blank=True)
+    change_frequency_km = models.PositiveIntegerField(name='Frecuencia cambio kilómetros', null=True, blank=True)
+
+    def __repr__(self) -> str:
+        return f'PartWithLifespanAbs(name={self.name})'
+    
+    def __str__(self) -> str:
+        return self.__repr__()
+    
+class PartTyreAbs(PartAbs):
+    change_frequency_timedelta = models.DurationField(name='Frecuencia cambio tiempo', null=True, blank=True)
+    change_frequency_km = models.PositiveIntegerField(name='Frecuencia cambio kilómetros', null=True, blank=True)
+
+    def __repr__(self) -> str:
+        return f'PartTyreAbs(name={self.name})'
+    
+    def __str__(self) -> str:
+        return self.__repr__()
+
+class PartWithoutLifespanAbs(PartAbs):
+    def __repr__(self) -> str:
+        return f'PartTyreAbs(name={self.name})'
+    
+    def __str__(self) -> str:
+        return self.__repr__()
 
 
+class Part(TimeStampMixinPolymorphic):
+    # should be meta, but is not, so that it can have relationships and, with polymorphic, act as a base class
+    # https://stackoverflow.com/questions/30343212/foreignkey-field-related-to-abstract-model-in-django
+
+    class Meta:
+        # abstract = True
+        default_related_name = 'parts'
+
+    class Functionality(models.TextChoices):
+        OK = 'OK', gettext_lazy('OK')
+        WARNING = 'WR', gettext_lazy('Atención')
+        VER_YBAD = 'VB', gettext_lazy('Muy Mala')
+        NOT_FUNCTIONAL = 'NF', gettext_lazy('No Funciona')
+
+    name = models.CharField(max_length=64, null=False, unique=True, blank=False)
+    info = models.CharField(max_length=256, null=True, blank=True)
+    vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, null=False, blank=False, related_name='b1', related_query_name='b2')
+    last_changed_datetime = models.DateTimeField(name='Fecha último cambio', null=False, blank=True)
+    last_changed_km = models.PositiveIntegerField(name='Kilometraje último cambio', null=False, blank=True)
+    functionality = models.CharField(name='Funcionalidad de la parte', max_length=2, choices=Functionality.choices, default=Functionality.OK, null=False, blank=False)
+
+class PartWithLifespan(Part):
+    class Meta:
+        default_related_name = 'parts_with_lifespan'
+
+    abstract_part = models.ForeignKey(PartWithLifespanAbs, on_delete=models.CASCADE, null=False, blank=True, related_name='c1', related_query_name='c2')
+    change_frequency_timedelta = models.DurationField(name='Frecuencia cambio tiempo', null=True, blank=True)
+    change_frequency_km = models.PositiveIntegerField(name='Frecuencia cambio kilómetros', null=True, blank=True)
+
+    @property
+    def should_change(self) -> bool:
+        return datetime.now() - self.last_changed_datetime > self.change_frequency_timedelta or \
+            self.vehicle.km - self.last_changed_km > self.change_frequency_km
+
+    def __repr__(self) -> str:
+        return f'PartWithLifespan(name={self.name}, should_change={self.should_change})'
+    
+    def __str__(self) -> str:
+        return self.__repr__()
+
+class PartTyre(Part):
+    class Meta:
+        default_related_name = 'parts_tyre'
+
+    abstract_part = models.ForeignKey(PartTyreAbs, on_delete=models.CASCADE, null=False, blank=True, related_name='d1', related_query_name='d2')
+    change_frequency_timedelta = models.DurationField(name='Frecuencia cambio tiempo', null=True, blank=True)
+    change_frequency_km = models.PositiveIntegerField(name='Frecuencia cambio kilómetros', null=True, blank=True)
+
+    @property
+    def should_change(self) -> bool:
+        return datetime.now() - self.last_changed_datetime > self.change_frequency_timedelta or \
+            self.vehicle.km - self.last_changed_km > self.change_frequency_km
+
+    recaped = models.BooleanField(null=False, blank=False, default=False)
+    def __repr__(self) -> str:
+        return f'PartTyre(name={self.name}, should_change={self.should_change}, recaped={self.recaped})'
+    
+    def __str__(self) -> str:
+        return self.__repr__()
+
+class PartWithoutLifespan(Part):
+    class Meta:
+        default_related_name = 'parts_without_lifespan'
+
+    abstract_part = models.ForeignKey(PartWithoutLifespanAbs, on_delete=models.CASCADE, null=False, blank=True, related_name='e1', related_query_name='e2')
+
+    def __repr__(self) -> str:
+        return f'PartWithoutLifespan(name={self.name})'
+    
+    def __str__(self) -> str:
+        return self.__repr__()
+    
+### PART CHANGE NOTICE and PART FIX
+
+class PartChangeNotice(TimeStampMixin):
+    class Meta:
+        default_related_name = 'part_change_notices'
+
+    class ChangeUrgency(models.TextChoices):
+        CRITICAL = 'CR', gettext_lazy('Crítico')
+        IMPORTANT = 'IM', gettext_lazy('Importante')
+        EVENTUAL = 'EV', gettext_lazy('Eventual')
+        NOTICE = 'NO', gettext_lazy('Notificado')
+
+    # ojo que todos los ForeignKeys que tengan (null=True, blank=False), pueden generar un error, si son null, pero se les requiere que se complete en un form
+    # esto se dejó así porque la única situació en la que deben ser null es si la referencia se perdiera pero no se quiere perder este objeto. Esto no debería
+    # pasar si todo funciona con normalidad
+    issued_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=False, related_name='f1', related_query_name='f2')
+    part = models.ForeignKey(Part, on_delete=models.CASCADE, null=False, blank=False, related_name='g1', related_query_name='g2')
+    info = models.CharField(max_length=1024, null=True, blank=True)
+    urgency_type = models.CharField(max_length=2, choices=ChangeUrgency.choices, default=ChangeUrgency.NOTICE, null=False, blank=False)
+
+    def __repr__(self) -> str:
+        return f'PartChangeNotice(part={self.part.name}, issued_by={self.issued_by.first_name}, urgency_type={self.urgency_type})'
+    
+    def __str__(self) -> str:
+        return self.__repr__()
+
+class PartFix(TimeStampMixin):
+    class Meta:
+        default_related_name = 'part_fixes'
+
+    done_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=False, limit_choices_to={"profile__position_type": Profile.PositionType.MECHANIC}, related_name='h1', related_query_name='h2') # TODO: check if limit_choices_to works correctly
+    part = models.ForeignKey(Part, on_delete=models.CASCADE, related_name='i1', related_query_name='i2')
+    replaced = models.BooleanField(null=False, blank=False, default=False) # si fue arreglado, eto es falso. si fue reemplazado, esto debe ser veradero
+    success = models.BooleanField(null=False, blank=False, default=True)
+    cost = models.PositiveIntegerField(null=True, blank=True)
+
+    def __repr__(self) -> str:
+        return f'PartFix(part={self.part.name}, done_by={self.done_by.first_name}, success={self.success})'
+    
+    def __str__(self) -> str:
+        return self.__repr__()
+    
+### FORMS ###
+
+class FormGroup(TimeStampMixin):
+    name = models.CharField(max_length=64, null=False, blank=False, unique=True)
+
+    def __repr__(self) -> str:
+        return f'FormGroup(name={self.name})'
+    
+    def __str__(self) -> str:
+        return self.__repr__()
+
+class FormAbs(TimeStampMixin):
+    # class Meta:
+    #     default_related_name = 'form_abs'
+
+    name = models.CharField(max_length=64, null=False, blank=False, unique=True)
+    form_group = models.ForeignKey(FormGroup, on_delete=models.SET_NULL, null=True, blank=True, related_name='j1', related_query_name='j2')
+
+    vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, null=False, blank=False, related_name='k1', related_query_name='k2')
+    profile_type = models.SmallIntegerField(choices=Profile.PositionType.choices, default=Profile.PositionType.NOT_ASSIGNED, null=False)
+
+    # TODO: add periodicity
+
+    def __repr__(self) -> str:
+        return f'FormAbs(name={self.name}, questions={self.questions})'
+    
+    def __str__(self) -> str:
+        return self.__repr__()
+    
+class Form(FormAbs):
+    class Meta:
+        default_related_name = '%(class)s'
+    
+    form_abs = models.ForeignKey(FormAbs, on_delete=models.SET_NULL, null=True, blank=False, related_name='l1', related_query_name='l2')
+    completed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=False, related_name='m1', related_query_name='m2')
+
+    @property
+    def complete(self) -> bool:
+        return all(question.complete for question in self.questions)
+
+def _form_post_init(sender, instance, using, **kwargs):
+    # sets the question_title, quesiton_group, info, part, vehicle, question_type, answer_type and allows_observations from the QuestionAbs
+    if (instance.form_abs):
+        instance.name = instance.form_abs.name
+        instance.form_group = instance.form_abs.form_group
+        instance.vehicle = instance.form_abs.vehicle
+        instance.profile_type = instance.form_abs.profile_type
+
+signals.post_init.connect(_form_post_init, sender=Form, weak=False, dispatch_uid='main.models._form_post_init')
+    
 ### QUESTIONS ###
 
-class QuestionType(models.Model):
-    name = models.CharField(max_length=16, unique=True, null=False, blank=False)
-    periodicity = models.BooleanField(default=False, null=False, blank=False)
+class QuestionGroup(TimeStampMixin):
+    name = models.CharField(max_length=64, null=False, blank=False, unique=True)
 
     def __repr__(self) -> str:
-        return f"QuestionType(name='{self.name}', periodicity={self.periodicity})"
+        return f'QuestionGroup(name={self.name})'
     
     def __str__(self) -> str:
-        return self.name
+        return self.__repr__()
+    
+# might be a good idea to separate daily questions from maintenance questions
+class QuestionAbs(TimeStampMixin):
+    class Meta:
+        default_related_name = 'question_abs'
 
+    class QuestionType(models.TextChoices):
+        DAILY = 'D', gettext_lazy('Diaria')
+        MAINTENANCE = 'M', gettext_lazy('Mantenimiento')
 
-class QuestionTemplate(models.Model):
-    url_name = 'checklist_question_template'
+    class AnswerType(models.TextChoices):
+        YES_NO = 'YN', gettext_lazy('Sí-No')
+        GOOD_REGULAR_BAD = '3S', gettext_lazy('Bueno-Regular-Malo')
+        NUMBER = 'NR', gettext_lazy('Número')
+        TEXT = 'TX', gettext_lazy('Texto')
 
-    question = models.CharField(max_length=32, null=False, blank=False)
+    question_group = models.ForeignKey(QuestionGroup, on_delete=models.SET_NULL, null=True, blank=True, related_name='n1', related_query_name='n2')
+
+    question_title = models.CharField(name='Título', max_length=128, null=False, blank=False)
     info = models.CharField(max_length=256, null=True, blank=True)
-    allow_notes = models.BooleanField(default=False, null=False, blank=True)
-    vehicles = models.ManyToManyField(Vehicle, blank=True, related_name='question_templates', related_query_name='question_templates')
-    question_types = models.ManyToManyField(QuestionType, blank=True, related_name='question_templates', related_query_name='question_templates')
-    position_type = models.SmallIntegerField(choices=Profile.PositionType.choices, default=Profile.PositionType.NOT_ASSIGNED, null=False) # TODO: no anda
+    part = models.ForeignKey(PartAbs, on_delete=models.SET_NULL, null=True, blank=True, related_name='o1', related_query_name='o2')
+    vehicle = models.ForeignKey(Vehicle, on_delete=models.SET_NULL, null=True, blank=True, related_name='p1', related_query_name='p2')
+    question_type = models.CharField(name='Tipo de pregunta', max_length=1, choices=QuestionType.choices, default=QuestionType.DAILY, null=False, blank=False)
+    answer_type = models.CharField(name='Tipo de respuesta', max_length=2, choices=AnswerType.choices, default=AnswerType.YES_NO, null=False, blank=False)
+    allows_observations = models.BooleanField(name='Permite observaciones', null=False, blank=False, default=True)
 
-    periodicity_days = models.IntegerField(default=0, null=False, blank=True) # cada cuantos dias debe ser completado. 0 significa que debe ser administrado por la persona que complete
-    periodicity_anchor = models.DateField(null=True, blank=True) # a day to start counting from. if the periodicity is daily (periodicity_days = 0) this has no effect
-    periodicity_days_notice = models.IntegerField(default=1, null=False, blank=True) # cuantos dias de changui para la persona que complete
-
-    def should_be_instantiated(self, question_types: Optional[list[QuestionType]]=None, now_utc: Optional[datetime]=None) -> tuple[bool, Union[int, None]]:
-        if question_types is None:
-            question_types = list(QuestionType.objects.all())
-        if self.question_types.exists():
-            intersection_question_types = [qt for qt in list(self.question_types.all()) if qt in question_types]
-            if any(not qt.periodicity for qt in intersection_question_types): # has a type that doesn't take into account periodicity
-                return True, None
-        if now_utc is None:
-            now_utc = datetime.now(timezone.utc)
-        now_utc = now_utc.date()
-        dt_absolute = now_utc - self.periodicity_anchor
-        dt_absolute_days = dt_absolute.days
-
-        if self.periodicity_days <= 0:
-            return True, dt_absolute_days
-
-        instantiate = any((dt_absolute_days + i) % self.periodicity_days == 0 for i in range(min(self.periodicity_days_notice, 1))) # true if we are in the period this question should be instatiated
-        n_instances = dt_absolute_days // self.periodicity_days # number of times this should have been called
-
-        return instantiate, n_instances
+    form_abs = models.ManyToManyField(FormAbs)
 
     def __repr__(self) -> str:
-        return f'QuestionTemplate(id={self.id}, question="{self.question}", allow_notes={self.allow_notes})'
+        return f'QuestionAbs(question_title={self.question_title}, part={self.part if self.part.name else None}, vehicle={self.vehicle.name if self.vehicle else None}, question_type={self.question_type}, answer_type={self.answer_type})'
     
     def __str__(self) -> str:
-        return f'Question tempate "{self.question}"'
+        return self.__repr__()
 
+class Question(QuestionAbs):
+    class Meta:
+        default_related_name = 'questions'
 
-class AnswerSession(TimeStampMixin):
-    user = models.ForeignKey(User, models.CASCADE, null=False, blank=False, related_name='answer_sessions', related_query_name='answer_sessions')
-    vehicle = models.ForeignKey(Vehicle, models.CASCADE, null=False, blank=False, related_name='answer_sessions', related_query_name='answer_sessions')
-    question_type = models.ForeignKey(QuestionType, models.SET_NULL, null=True, blank=False)
-    question_templates = models.ManyToManyField(QuestionTemplate, blank=True, related_name='answer_sessions', related_query_name='answer_sessions')
-    complete = models.BooleanField(null=False, blank=True, default=False)
+    class GoodRegularBadAnswers(models.TextChoices):
+        GOOD = 'G', gettext_lazy('Bueno')
+        REGULAT = 'R', gettext_lazy('Regular')
+        BAD = 'B', gettext_lazy('Malo')
 
-    def __repr__(self) -> str:
-        return f'AnswerSession(question_template_ids={[qt.id for qt in self.question_templates.all()]}, question_type={self.question_type}, completed={self.complete})'
+    question_abs = models.ForeignKey(QuestionAbs, on_delete=models.SET_NULL, null=True, blank=False, related_name='q1', related_query_name='q2')
+    form = models.ForeignKey(Form, on_delete=models.CASCADE, null=False, blank=False, related_name='r1', related_query_name='r2')
+
+    @property
+    def part_abs(self) -> Optional[Part]:
+        if not self.question_abs: return False
+        return self.question_abs.part
+
+    @property
+    def vehicle_abs(self) -> Optional[Vehicle]:
+        if not self.question_abs: return False
+        return self.question_abs.vehicle
+
+    @property
+    def question_type_abs(self) -> Optional[QuestionAbs.QuestionType]:
+        if not self.question_abs: return None
+        return self.question_abs.question_type
     
-    def __str__(self) -> str:
-        return f'Answer session {self.id}'
+    @property
+    def answer_type_abs(self) -> Optional[QuestionAbs.AnswerType]:
+        if not self.question_abs: return None
+        return self.question_abs.answer_type
+    
+    @property
+    def allows_observations_abs(self) -> Optional[bool]:
+        if not self.question_abs: return None
+        return self.question_abs.allows_observations
 
-
-class QuestionInstance(TimeStampMixin):
-    url_name = 'checklist_question_instance'
-
-    question = models.CharField(max_length=32, null=False, blank=False)
-    question_template = models.ForeignKey(QuestionTemplate, models.SET_NULL, null=True, blank=False, related_name='question_instances', related_query_name='question_instances')
-    vehicle = models.ForeignKey(Vehicle, models.SET_NULL, null=True, blank=False, related_name='question_instances', related_query_name='question_instances')
-    user = models.ForeignKey(User, models.SET_NULL, null=True, blank=False)
-    answer = models.BooleanField(null=False, default=None)
-    problem_description = models.TextField(null=True, blank=True)
-    notes = models.TextField(null=True, blank=True)
-    answer_session = models.ForeignKey(AnswerSession, on_delete=models.CASCADE, null=True, related_name='question_instances', related_query_name='question_instances')
-
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        if self.question_template is None:
-            #raise Exception("Can't instantiate QuestionInstance without a QuestionTemplate parameter")
-            self.question = None
-            self.position_type = None
+    yes_no = models.BooleanField(name='Respuesta Sí-No', null=True, blank=True, default=None)
+    good_regular_bad = models.CharField(name='Respuesta Bueno-Regular-Malo', max_length=1, choices=GoodRegularBadAnswers.choices, default=None, null=True, blank=True)
+    number = models.IntegerField(name='Respuesta Numérica', null=True, blank=True)
+    text = models.CharField(name='Respuesta de texto', max_length=1024, null=True, blank=True)
+        
+    @property
+    def answer(self) -> Union[bool, GoodRegularBadAnswers, int, str, None]:
+        if self.answer_type == QuestionAbs.AnswerType.YES_NO:
+            return self.yes_no
+        elif self.answer_type == QuestionAbs.AnswerType.GOOD_REGULAR_BAD:
+            return self.good_regular_bad
+        elif self.answer_type == QuestionAbs.AnswerType.NUMBER:
+            return self.number
+        elif self.answer_type == QuestionAbs.AnswerType.TEXT:
+            return self.text
         else:
-            self.question = self.question_template.question
-            self.position_type = self.question_template.position_type
-
+            raise Exception
+    
+    @property
+    def complete(self) -> bool:
+        return self.answer is not None
+    
     def __repr__(self) -> str:
-        return f'QuestionInstance(id={self.id}, title={self.question_template.question if self.question_template else "None"}, answer={self.answer})'
+        return f'Question(question_title={self.question_title if self.question_title else None}, part={self.part if self.part.name else None}, vehicle={self.vehicle.name if self.vehicle else None}, question_type={self.question_type}, answer_type={self.answer_type})'
     
     def __str__(self) -> str:
-        return f'Question instance "{self.question}"'
+        return self.__repr__()
 
+def _question_abs_post_init(sender, instance, using, **kwargs):
+    # if there is a part and that part has a vehicle, the vehicle of the QuationsAbs should be the vehicle of the part
+    if (instance.part):
+        if (instance.part.vehicle):
+            instance.vehicle = instance.part.vehicle
 
-def create_question_instance(question_template: QuestionTemplate, vehicle: Vehicle, user: User) -> QuestionInstance:
-    question_instance = QuestionInstance(question_template=question_template, vehicle=vehicle, user=user)
-    return question_instance
+def _question_post_init(sender, instance, using, **kwargs):
+    # sets the question_title, quesiton_group, info, part, vehicle, question_type, answer_type and allows_observations from the QuestionAbs
+    if (instance.question_abs):
+        instance.question_title = instance.question_abs.question_title
+        instance.question_group = instance.question_abs.question_group
+        instance.info = instance.question_abs.info
+        instance.part = instance.question_abs.part
+        instance.vehicle = instance.question_abs.vehicle
+        instance.question_type = instance.question_abs.question_type
+        instance.answer_type = instance.question_abs.question_type
+        instance.allows_observations = instance.question_abs.allows_observations
 
-def add_question_instance_to_session(answer_session: AnswerSession, question_template: QuestionTemplate) -> QuestionInstance:
-    question_instance = create_question_instance(question_template, answer_session.vehicle, answer_session.user)
-    question_instance.answer_session = answer_session
-    return question_instance
-
-def create_answer_session(user: User, vehicle: Vehicle, question_type: int, now_utc: Optional[datetime]=None) -> AnswerSession:
-    question_templates = QuestionTemplate.objects.filter(position_type=user.profile.position_type, vehicles=vehicle, question_types__in=[question_type]).all()
-    question_templates = [question_template for question_template in question_templates if question_template.should_be_instantiated(now_utc=now_utc)[0]]
-    session = AnswerSession(user=user, vehicle=vehicle, question_type=question_type)
-    session.save() # for the relationships to work
-    session.question_templates.add(*question_templates)
-    return session
-
-
-def delete_question_template(sender, instance, using, **kwargs):
-    AnswerSession.objects.filter(question_templates__id=instance.id).delete()
-
-# def delete_answer_session(sender, instance, using, **kwargs):
-#     QuestionInstance.objects.filter(answer_session=instance).delete()
-
-signals.pre_delete.connect(delete_question_template, sender=QuestionTemplate, weak=False, dispatch_uid='main.models.delete_question_template')
-# signals.pre_delete.connect(delete_answer_session, sender=AnswerSession, weak=False, dispatch_uid='main.models.delete_answer_session')
-
-
-### PARTS ###
-
-# class PartType(models.Model):
-#     url_name = 'part_type'
-#     name = models.CharField(max_length=64, null=False, unique=True)
-
-#     def __str__(self) -> str:
-#         return f'PartType(id={self.id}, name={self.name})'
-
-
-# class PartBase(models.Model):
-#     # The parts OTHER, and the ones with specific models have to exists from the get-go
-
-#     vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, null=False, blank=False)
-#     part_type = models.ForeignKey(PartType, on_delete=models.CASCADE, null=False, blank=False)
-#     info = models.CharField(max_length=128, null=False, default='')
-#     text = models.TextField(null=False, default='')
-
-#     max_mileage = models.PositiveIntegerField(null=True) # in kilometers, of course
-#     curr_mileage = models.PositiveIntegerField(default=0)
-#     max_time = models.DurationField(null=True)
-#     curr_time = models.DurationField(default=datetime.timedelta)
-
-#     install_date = models.DateField(default=timezone.now, null=False)
-#     # TODO: need to add repair dates, probably as foreignkeys to have a repair history
-
-#     class Meta:
-#         abstract = True
-
-#     @staticmethod
-#     def get_part_types() -> list[tuple[str, int]]:
-#         return [(part.name, part.id) for part in Part.objects.all()]
-
-#     def __str__(self) -> str:
-#         return f'Part(id={self.id}, vehice_id={self.vehicle.id}, part_type={self.part_type.name})'
-
-
-# class PartWheel(PartBase):
-#     url_name = 'part_wheel'
-#     number = models.PositiveSmallIntegerField(null=False, default=0)
-#     refurbished = models.PositiveSmallIntegerField(null=False, default=0)
-
-
-# class Part(PartBase):
-#     pass
-    
-
-# ### REPAIRS ###
-
-# class RepairBase(models.Model):
-#     description = models.TextField()
-#     issue_date = models.DateField(default=timezone.now, null=False)
-#     completed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
-#     completion_date = models.DateField(default=None, null=True)
-
-#     @property
-#     def completed(self) -> bool:
-#         return bool(self.completed_by)
-
-#     class Meta:
-#         abstract = True
-
-
-# class Repair(RepairBase):
-#     url_name = 'repair'
-#     part = models.ForeignKey(Part, on_delete=models.CASCADE, null=False, blank=False)
-
-#     def __str__(self) -> str:
-#         return f'Repair(id={self.id}, part={self.part})'
-
-
-# class RepairWheel(RepairBase):
-#     url_name = 'repair_wheel'
-#     part = models.ForeignKey(PartWheel, on_delete=models.CASCADE, null=False, blank=False)
-
-#     def __str__(self) -> str:
-#         return f'Repair(id={self.id}, part={self.part})'
-
-
-# class QuestionType(models.IntegerChoices):
-#     GENERIC = 2**0, gettext_lazy('Generic')
-#     GET_ON = 2**1, gettext_lazy('Get on')
-#     GET_OFF = 2**2, gettext_lazy('Get off')
-
-#     @classmethod
-#     def get_type_from_int(cls, n: int):
-#         if n == 'g':
-#             return cls.GENERIC
-#         elif n == 'n':
-#             return cls.GET_ON
-#         elif n == 'f':
-#             return cls.GET_OFF
-#         raise Exception(f'No enum correspondance to {n}')
-    
-#     @classmethod
-#     def min_val(cls) -> int:
-#         return cls.GENERIC.value
-    
-#     @classmethod
-#     def max_val(cls) -> int:
-#         return sum(elem.value for elem in cls)
-    
-#     @staticmethod
-#     def encode(values):
-#         if not values:
-#             return 0
-#         return sum(v.value for v in values)
-    
-#     @classmethod
-#     def decode(cls, number):
-#         return [v for v in cls if number & v.value]
-
-# class QuestionTypeField(models.IntegerField):
-#     def __init__(self, *args, **kwargs) -> None:
-#         super().__init__(default=[], null=False, blank=False, validators=[
-#             validators.MaxValueValidator(QuestionType.max_val()),
-#             validators.MinValueValidator(QuestionType.min_val())
-#         ])
-
-#     def get_prep_value(self, value):
-#         # from python to database
-#         if value is not None:
-#             value = QuestionType.encode(value)
-#         return super().get_prep_value(value)
-    
-#     def from_db_value(self, value, expression, connection, *args):
-#         # from database to python
-#         if value is None:
-#             return None
-#         if isinstance(value, int):
-#             return QuestionType.decode(value)
-#         else:
-#             raise exceptions.ValidationError('Bad db typing')
+signals.post_init.connect(_question_abs_post_init, sender=QuestionAbs, weak=False, dispatch_uid='main.models._question_abs_post_init')
+signals.post_init.connect(_question_post_init, sender=Question, weak=False, dispatch_uid='main.models._question_post_init')
