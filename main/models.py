@@ -5,7 +5,7 @@ from user.models import Profile
 from django.utils.translation import gettext_lazy
 from django.utils import timezone
 from django.db.models import signals
-from polymorphic.models import PolymorphicModel
+# from polymorphic.models import PolymorphicModel
 # PolymorphicModel replaces models.Model. It allows the following interaction:
 #
 #    class Project(PolymorphicModel):
@@ -28,13 +28,6 @@ from polymorphic.models import PolymorphicModel
 
 
 class TimeStampMixin(models.Model):
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        abstract = True
-
-class TimeStampMixinPolymorphic(PolymorphicModel):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -75,19 +68,27 @@ class Vehicle(TimeStampMixin):
     
 ### PARTS ###
     
-class PartAbs(TimeStampMixinPolymorphic):
+class PartAbs(TimeStampMixin):
     # should be meta, but is not, so that it can have relationships and, with polymorphic, act as a base class
     # https://stackoverflow.com/questions/30343212/foreignkey-field-related-to-abstract-model-in-django
 
-    # class Meta:
-    #     abstract = True
+    class Meta:
+        # abstract = True
+        default_related_name = 'parts_abs'
 
     name = models.CharField(max_length=64, null=False, unique=True, blank=False)
     info = models.CharField(max_length=128, null=True, blank=True)
 
 class PartWithLifespanAbs(PartAbs):
-    change_frequency_timedelta = models.DurationField(null=True, blank=True)
-    change_frequency_km = models.PositiveIntegerField(null=True, blank=True)
+    class Meta:
+        default_related_name = 'parts_with_lifespan_abs'
+
+    change_frequency_timedelta = models.DurationField(null=True, blank=True, default=None)
+    change_frequency_km = models.PositiveIntegerField(null=True, blank=True, default=None)
+
+    @property
+    def parts_with_lifespan(self):
+        return PartWithLifespan.objects.filter(abstract_part=self).all()
 
     def __repr__(self) -> str:
         return f'PartWithLifespanAbs(name={self.name})'
@@ -96,8 +97,15 @@ class PartWithLifespanAbs(PartAbs):
         return self.__repr__()
     
 class PartTyreAbs(PartAbs):
-    change_frequency_timedelta = models.DurationField(null=True, blank=True)
-    change_frequency_km = models.PositiveIntegerField(null=True, blank=True)
+    class Meta:
+        default_related_name = 'parts_tyre_abs'
+
+    change_frequency_timedelta = models.DurationField(null=True, blank=True, default=None)
+    change_frequency_km = models.PositiveIntegerField(null=True, blank=True, default=None)
+
+    @property
+    def parts_tyre(self):
+        return PartTyre.objects.filter(abstract_part=self).all()
 
     def __repr__(self) -> str:
         return f'PartTyreAbs(name={self.name})'
@@ -106,6 +114,13 @@ class PartTyreAbs(PartAbs):
         return self.__repr__()
 
 class PartWithoutLifespanAbs(PartAbs):
+    class Meta:
+        default_related_name = 'parts_without_lifespan_abs'
+
+    @property
+    def parts_without_lifespan(self):
+        return PartWithoutLifespan.objects.filter(abstract_part=self).all()
+
     def __repr__(self) -> str:
         return f'PartTyreAbs(name={self.name})'
     
@@ -113,7 +128,7 @@ class PartWithoutLifespanAbs(PartAbs):
         return self.__repr__()
 
 
-class Part(TimeStampMixinPolymorphic):
+class Part(TimeStampMixin):
     # should be meta, but is not, so that it can have relationships and, with polymorphic, act as a base class
     # https://stackoverflow.com/questions/30343212/foreignkey-field-related-to-abstract-model-in-django
 
@@ -139,7 +154,7 @@ class PartWithLifespan(Part):
     class Meta:
         default_related_name = 'parts_with_lifespan'
 
-    abstract_part = models.ForeignKey(PartWithLifespanAbs, on_delete=models.CASCADE, null=False, blank=True, related_name='c1', related_query_name='c2')
+    abstract_part = models.ForeignKey(PartWithLifespanAbs, on_delete=models.CASCADE, null=False, blank=False, related_name='c1', related_query_name='c2')
     change_frequency_timedelta = models.DurationField(null=True, blank=True)
     change_frequency_km = models.PositiveIntegerField(null=True, blank=True)
 
@@ -163,14 +178,19 @@ class PartTyre(Part):
     class Meta:
         default_related_name = 'parts_tyre'
 
-    abstract_part = models.ForeignKey(PartTyreAbs, on_delete=models.CASCADE, null=False, blank=True, related_name='d1', related_query_name='d2')
-    change_frequency_timedelta = models.DurationField(null=True, blank=True, default=timezone.now)
-    change_frequency_km = models.PositiveIntegerField(null=True, blank=True, default=0)
+    abstract_part = models.ForeignKey(PartTyreAbs, on_delete=models.CASCADE, null=False, blank=False, related_name='d1', related_query_name='d2')
+    change_frequency_timedelta = models.DurationField(null=True, blank=True)
+    change_frequency_km = models.PositiveIntegerField(null=True, blank=True)
 
     @property
     def should_change(self) -> bool:
-        return timezone.now() - self.last_changed_datetime > self.change_frequency_timedelta or \
-            self.vehicle.km - self.last_changed_km > self.change_frequency_km
+        should_change_time = False
+        should_change_km = False
+        if self.change_frequency_timedelta:
+            should_change_time = timezone.now() - self.last_changed_datetime > self.change_frequency_timedelta
+        if self.change_frequency_km:
+            should_change_km = self.vehicle.km - self.last_changed_km > self.change_frequency_km
+        return should_change_time or should_change_km
 
     recaped = models.BooleanField(null=False, blank=False, default=False)
     def __repr__(self) -> str:
@@ -183,7 +203,7 @@ class PartWithoutLifespan(Part):
     class Meta:
         default_related_name = 'parts_without_lifespan'
 
-    abstract_part = models.ForeignKey(PartWithoutLifespanAbs, on_delete=models.CASCADE, null=False, blank=True, related_name='e1', related_query_name='e2')
+    abstract_part = models.ForeignKey(PartWithoutLifespanAbs, on_delete=models.CASCADE, null=False, blank=False, related_name='e1', related_query_name='e2')
 
     def __repr__(self) -> str:
         return f'PartWithoutLifespan(name={self.name})'
@@ -407,34 +427,48 @@ def _question_abs_post_init(sender, instance, **kwargs):
 def _part_all_post_save(sender, instance, created, **kwargs):
     # sets the last_changed_km of the part to the vehicle's currnent km if no km was specified
     if created and instance.abstract_part:
+        save = False
         if sender == PartWithLifespan or sender == PartTyre:
-            if instance.abstract_part.change_frequency_timedelta:
-                instance.change_frequency_timedelta = instance.abstract_part.change_frequency_timedelta
-            if instance.abstract_part.change_frequency_km:
-                instance.change_frequency_km = instance.abstract_part.change_frequency_km
+            td = instance.abstract_part.change_frequency_timedelta
+            km = instance.abstract_part.change_frequency_km
+            if td:
+                instance.change_frequency_timedelta = td
+            if km:
+                instance.change_frequency_km = km
+            save = td or km
         else: # sender == PartWithoutLifespanAbs:
             pass
 
         if not instance.info and instance.abstract_part.info:
             instance.info = instance.abstract_part.info
+            save = True
+
+        if save:
+            instance.save()
 
 def _part_abs_all_post_save(sender, instance, created, **kwargs):
+    save = False
     if sender == PartWithLifespanAbs:
-        for inst in instance.objects.all().parts_with_lifespan:
+        for inst in instance.parts_with_lifespan:
             if inst.update_info:
                 inst.change_frequency_timedelta = instance.change_frequency_timedelta
                 inst.change_frequency_km = instance.change_frequency_km
+                save = True
     elif sender == PartTyreAbs:
-        for inst in instance.objects.all().part_tyre:
+        for inst in instance.parts_tyre:
             if inst.update_info:
                 inst.change_frequency_timedelta = instance.change_frequency_timedelta
                 inst.change_frequency_km = instance.change_frequency_km
+                save = True
     else: # sender == PartWithoutLifespanAbs:
         pass
-        # for inst in instance.objects.all().parts_without_lifespan:
+        # for inst in instance.parts_without_lifespan:
         #     pass
+    
+    if save:
+        instance.save()
 
-
+# TODO: these signals are recursive
 signals.post_save.connect(_part_all_post_save, sender=PartWithLifespan, weak=False, dispatch_uid='main.models._part_all_post_save.PartWithLifespan')
 signals.post_save.connect(_part_all_post_save, sender=PartTyre, weak=False, dispatch_uid='main.models._part_all_post_save.PartTyre')
 signals.post_save.connect(_part_abs_all_post_save, sender=PartWithLifespanAbs, weak=False, dispatch_uid='main.models._part_abs_all_update.PartWithLifespanAbs')
