@@ -445,8 +445,8 @@ def _part_all_pre_save(sender, instance, **kwargs):
     created = instance.pk is None
     if created and instance.abstract_part:
         if sender == PartWithLifespan or sender == PartTyre:
-            td = instance.abstract_part.change_frequency_timedelta
-            km = instance.abstract_part.change_frequency_km
+            td = instance.part_abs.change_frequency_timedelta
+            km = instance.part_abs.change_frequency_km
             if td:
                 instance.change_frequency_timedelta = td
             if km:
@@ -454,8 +454,8 @@ def _part_all_pre_save(sender, instance, **kwargs):
         else: # sender == PartWithoutLifespanAbs:
             pass
 
-        if not instance.info and instance.abstract_part.info:
-            instance.info = instance.abstract_part.info
+        if not instance.info and instance.part_abs.info:
+            instance.info = instance.part_abs.info
 
 def _part_abs_all_pre_save(sender, instance, **kwargs):
     if sender == PartWithLifespanAbs:
@@ -485,8 +485,8 @@ def _part_all_post_save(sender, instance, created, **kwargs):
         proxy = PartProxy(content_object=instance, vehicle=instance.vehicle)
         proxy.save()
 
-# signals.pre_save.connect(_part_all_pre_save, sender=PartWithLifespan, weak=False, dispatch_uid='main.models._part_all_pre_save.PartWithLifespan')
-# signals.pre_save.connect(_part_all_pre_save, sender=PartTyre, weak=False, dispatch_uid='main.models._part_all_pre_save.PartTyre')
+signals.pre_save.connect(_part_all_pre_save, sender=PartWithLifespan, weak=False, dispatch_uid='main.models._part_all_pre_save.PartWithLifespan')
+signals.pre_save.connect(_part_all_pre_save, sender=PartTyre, weak=False, dispatch_uid='main.models._part_all_pre_save.PartTyre')
 # signals.pre_save.connect(_part_abs_all_pre_save, sender=PartWithLifespanAbs, weak=False, dispatch_uid='main.models._part_abs_all_pre_save.PartWithLifespanAbs')
 # signals.pre_save.connect(_part_abs_all_pre_save, sender=PartTyreAbs, weak=False, dispatch_uid='main.models._part_abs_all_pre_save.PartTyreAbs')
 # signals.pre_save.connect(_part_abs_all_pre_save, sender=PartWithoutLifespanAbs, weak=False, dispatch_uid='main.models._part_abs_all_pre_save.PartWithoutLifespanAbs')

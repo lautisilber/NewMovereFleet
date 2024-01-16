@@ -61,12 +61,12 @@ class PartWithoutLifespanAbsForm(forms.ModelForm):
 class PartWithLifespanForm(forms.ModelForm):
     class Meta:
         model = PartWithLifespan
-        fields = '__all__'
+        exclude = ('change_frequency_timedelta', 'change_frequency_km')
 
 class PartTyreForm(forms.ModelForm):
     class Meta:
         model = PartTyre
-        fields = '__all__'
+        exclude = ('change_frequency_timedelta', 'change_frequency_km')
 
 class PartWithoutLifespanForm(forms.ModelForm):
     class Meta:
