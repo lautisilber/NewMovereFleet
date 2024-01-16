@@ -5,18 +5,70 @@ from django.db import models
 from django.db.models.base import Model
 from django.forms.utils import ErrorList
 from django.forms.widgets import Widget
-from .models import Company, Vehicle
 from django.utils.translation import gettext_lazy
 from django.core.exceptions import ValidationError
+from django.contrib.contenttypes.models import ContentType
 
-exclude_timestamp_mixin = ('created_at', 'updated_at')
+from .models import Company, Vehicle, PartAbsProxy, PartWithLifespanAbs, PartTyreAbs, PartWithoutLifespanAbs, Part, PartWithLifespan, PartTyre, PartWithoutLifespan
+
+# class BaseForm(forms.Form):
+#     def __init__(self, *args, **kwargs):
+#         super(BaseForm, self).__init__(*args, **kwargs)
+#         for bound_field in self:
+#             if hasattr(bound_field, "field") and bound_field.field.required:
+#                 bound_field.field.widget.attrs["required"] = "required"
+
+# class BaseModelForm(forms.ModelForm):
+#     def __init__(self, *args, **kwargs):
+#         super(BaseModelForm, self).__init__(*args, **kwargs)
+#         for bound_field in self:
+#             if hasattr(bound_field, "field") and bound_field.field.required:
+#                 bound_field.field.widget.attrs["required"] = "required"
 
 class CompanyForm(forms.ModelForm):
     class Meta:
         model = Company
-        exclude = exclude_timestamp_mixin
+        fields = '__all__'
 
 class VehicleForm(forms.ModelForm):
     class Meta:
         model = Vehicle
-        exclude = exclude_timestamp_mixin
+        fields = '__all__'
+
+
+# class PartAbsBaseForm(forms.ModelForm):
+#     content_type = forms.ModelChoiceField(required=True, empty_label=None, queryset=ContentType.objects.filter(model__in=(
+#         PartWithLifespanAbs._meta.model_name,
+#         PartTyreAbs._meta.model_name,
+#         PartWithoutLifespanAbs._meta.model_name
+#     )).all())
+
+class PartWithLifespanAbsForm(forms.ModelForm):
+    class Meta:
+        model = PartWithLifespanAbs
+        fields = '__all__'
+
+class PartTyreAbsForm(forms.ModelForm):
+    class Meta:
+        model = PartTyreAbs
+        fields = '__all__'
+
+class PartWithoutLifespanAbsForm(forms.ModelForm):
+    class Meta:
+        model = PartWithoutLifespanAbs
+        fields = '__all__'
+
+class PartWithLifespanForm(forms.ModelForm):
+    class Meta:
+        model = PartWithLifespan
+        fields = '__all__'
+
+class PartTyreForm(forms.ModelForm):
+    class Meta:
+        model = PartTyre
+        fields = '__all__'
+
+class PartWithoutLifespanForm(forms.ModelForm):
+    class Meta:
+        model = PartWithoutLifespan
+        fields = '__all__'
