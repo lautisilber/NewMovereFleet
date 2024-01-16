@@ -9,8 +9,33 @@
 <body>
     <nav>
         <ul>
-            
+        <li><a href="#">Home</a></li>
+        {% if user.is_authenticated %}
+            <li>Hola {{ user.username }}!</li>
+            {% if user.profile.position_type == 'D' %}
+            <li>You are a driver</li>
+            {% elif user.profile.position_type == 'M' %}
+            <li>You are a mechanic</li>
+            {% elif user.profile.position_type == 'A' %}
+            <li>You are an admin</li>
+            {% elif user.profile.position_type == 'S' %}
+            <li>You are a superuser</li>
+            <li><a href="{% url 'admin:index' %}">Admin</a></li>
+            {% elif user.profile.position_type == 'N' %}
+            <li>You have no position asigned</li>
+            {% else %}
+            <li>This is weird</li>
+            {% endif %}
+            <li><a class="button is-link" href="{% url 'user-logout' %}?next={% url 'main-home' %}">
+                <strong>Cerrar sesión</strong>
+            </a></li>
+        {% else %}
+        <li><a class="button is-light" href="{% url 'user-login' %}">
+            Iniciar sesión
+        </a></li>
+        {% endif %}
         </ul>
     </nav>
+    {% block content %}{% endblock %}
 </body>
 </html>

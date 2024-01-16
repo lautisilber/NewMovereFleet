@@ -11,9 +11,9 @@ from user.models import Profile
 
 
 def home(request: HttpRequest):
-    if request.user.is_authenticated:
-        if request.user.profile.position_type == Profile.PositionType.DRIVER:
-            return render(request, 'main/driver_home.html')
+    # if request.user.is_authenticated:
+    #     if request.user.profile.position_type == Profile.PositionType.DRIVER:
+    #         return render(request, 'main/driver_home.html')
     return render(request, 'main/home.html')
 
 

@@ -3,7 +3,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from user.models import Profile
 from django.utils.translation import gettext_lazy
-from datetime import datetime, timedelta, timezone
+from django.utils import timezone
 from django.db.models import signals
 from polymorphic.models import PolymorphicModel
 # PolymorphicModel replaces models.Model. It allows the following interaction:
@@ -28,15 +28,15 @@ from polymorphic.models import PolymorphicModel
 
 
 class TimeStampMixin(models.Model):
-    created_at = models.DateTimeField(name='Creado en', auto_now_add=True)
-    updated_at = models.DateTimeField(name='Actualizado en', auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         abstract = True
 
 class TimeStampMixinPolymorphic(PolymorphicModel):
-    created_at = models.DateTimeField(name='Creado en', auto_now_add=True)
-    updated_at = models.DateTimeField(name='Actualizado en', auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         abstract = True
@@ -61,6 +61,7 @@ class Vehicle(TimeStampMixin):
 
     url_name = 'vehicle'
     name = models.CharField(max_length=64, null=False, unique=True, blank=False)
+    info = models.CharField(max_length=256, null=True, blank=True)
     km = models.PositiveIntegerField(default=0, null=False, blank=False)
     fuel = models.PositiveSmallIntegerField(default=0, null=False, blank=False)
         
@@ -82,10 +83,11 @@ class PartAbs(TimeStampMixinPolymorphic):
     #     abstract = True
 
     name = models.CharField(max_length=64, null=False, unique=True, blank=False)
+    info = models.CharField(max_length=128, null=True, blank=True)
 
 class PartWithLifespanAbs(PartAbs):
-    change_frequency_timedelta = models.DurationField(name='Frecuencia cambio tiempo', null=True, blank=True)
-    change_frequency_km = models.PositiveIntegerField(name='Frecuencia cambio kilómetros', null=True, blank=True)
+    change_frequency_timedelta = models.DurationField(null=True, blank=True)
+    change_frequency_km = models.PositiveIntegerField(null=True, blank=True)
 
     def __repr__(self) -> str:
         return f'PartWithLifespanAbs(name={self.name})'
@@ -94,8 +96,8 @@ class PartWithLifespanAbs(PartAbs):
         return self.__repr__()
     
 class PartTyreAbs(PartAbs):
-    change_frequency_timedelta = models.DurationField(name='Frecuencia cambio tiempo', null=True, blank=True)
-    change_frequency_km = models.PositiveIntegerField(name='Frecuencia cambio kilómetros', null=True, blank=True)
+    change_frequency_timedelta = models.DurationField(null=True, blank=True)
+    change_frequency_km = models.PositiveIntegerField(null=True, blank=True)
 
     def __repr__(self) -> str:
         return f'PartTyreAbs(name={self.name})'
@@ -126,24 +128,30 @@ class Part(TimeStampMixinPolymorphic):
         NOT_FUNCTIONAL = 'NF', gettext_lazy('No Funciona')
 
     name = models.CharField(max_length=64, null=False, unique=True, blank=False)
-    info = models.CharField(max_length=256, null=True, blank=True)
+    info = models.CharField(max_length=128, null=True, blank=True)
     vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, null=False, blank=False, related_name='b1', related_query_name='b2')
-    last_changed_datetime = models.DateTimeField(name='Fecha último cambio', null=False, blank=True)
-    last_changed_km = models.PositiveIntegerField(name='Kilometraje último cambio', null=False, blank=True)
-    functionality = models.CharField(name='Funcionalidad de la parte', max_length=2, choices=Functionality.choices, default=Functionality.OK, null=False, blank=False)
+    last_changed_datetime = models.DateTimeField(null=False, blank=True, default=timezone.now) # the date this part was last changed (of the vehicle)
+    last_changed_km = models.PositiveIntegerField(null=False, blank=True, default=0) # the vehicle km at which this part was changed
+    functionality = models.CharField(max_length=2, choices=Functionality.choices, default=Functionality.OK, null=False, blank=False)
+    update_info = models.BooleanField(null=False, blank=False, default=True) # if True, the part's data will be updated when the PartAbs's data does
 
 class PartWithLifespan(Part):
     class Meta:
         default_related_name = 'parts_with_lifespan'
 
     abstract_part = models.ForeignKey(PartWithLifespanAbs, on_delete=models.CASCADE, null=False, blank=True, related_name='c1', related_query_name='c2')
-    change_frequency_timedelta = models.DurationField(name='Frecuencia cambio tiempo', null=True, blank=True)
-    change_frequency_km = models.PositiveIntegerField(name='Frecuencia cambio kilómetros', null=True, blank=True)
+    change_frequency_timedelta = models.DurationField(null=True, blank=True)
+    change_frequency_km = models.PositiveIntegerField(null=True, blank=True)
 
     @property
     def should_change(self) -> bool:
-        return datetime.now() - self.last_changed_datetime > self.change_frequency_timedelta or \
-            self.vehicle.km - self.last_changed_km > self.change_frequency_km
+        should_change_time = False
+        should_change_km = False
+        if self.change_frequency_timedelta:
+            should_change_time = timezone.now() - self.last_changed_datetime > self.change_frequency_timedelta
+        if self.change_frequency_km:
+            should_change_km = self.vehicle.km - self.last_changed_km > self.change_frequency_km
+        return should_change_time or should_change_km
 
     def __repr__(self) -> str:
         return f'PartWithLifespan(name={self.name}, should_change={self.should_change})'
@@ -156,12 +164,12 @@ class PartTyre(Part):
         default_related_name = 'parts_tyre'
 
     abstract_part = models.ForeignKey(PartTyreAbs, on_delete=models.CASCADE, null=False, blank=True, related_name='d1', related_query_name='d2')
-    change_frequency_timedelta = models.DurationField(name='Frecuencia cambio tiempo', null=True, blank=True)
-    change_frequency_km = models.PositiveIntegerField(name='Frecuencia cambio kilómetros', null=True, blank=True)
+    change_frequency_timedelta = models.DurationField(null=True, blank=True, default=timezone.now)
+    change_frequency_km = models.PositiveIntegerField(null=True, blank=True, default=0)
 
     @property
     def should_change(self) -> bool:
-        return datetime.now() - self.last_changed_datetime > self.change_frequency_timedelta or \
+        return timezone.now() - self.last_changed_datetime > self.change_frequency_timedelta or \
             self.vehicle.km - self.last_changed_km > self.change_frequency_km
 
     recaped = models.BooleanField(null=False, blank=False, default=False)
@@ -183,6 +191,7 @@ class PartWithoutLifespan(Part):
     def __str__(self) -> str:
         return self.__repr__()
     
+
 ### PART CHANGE NOTICE and PART FIX
 
 class PartChangeNotice(TimeStampMixin):
@@ -303,13 +312,13 @@ class QuestionAbs(TimeStampMixin):
 
     question_group = models.ForeignKey(QuestionGroup, on_delete=models.SET_NULL, null=True, blank=True, related_name='n1', related_query_name='n2')
 
-    question_title = models.CharField(name='Título', max_length=128, null=False, blank=False)
+    question_title = models.CharField(max_length=128, null=False, blank=False)
     info = models.CharField(max_length=256, null=True, blank=True)
     part = models.ForeignKey(PartAbs, on_delete=models.SET_NULL, null=True, blank=True, related_name='o1', related_query_name='o2')
     vehicle = models.ForeignKey(Vehicle, on_delete=models.SET_NULL, null=True, blank=True, related_name='p1', related_query_name='p2')
-    question_type = models.CharField(name='Tipo de pregunta', max_length=1, choices=QuestionType.choices, default=QuestionType.DAILY, null=False, blank=False)
-    answer_type = models.CharField(name='Tipo de respuesta', max_length=2, choices=AnswerType.choices, default=AnswerType.YES_NO, null=False, blank=False)
-    allows_observations = models.BooleanField(name='Permite observaciones', null=False, blank=False, default=True)
+    question_type = models.CharField(max_length=1, choices=QuestionType.choices, default=QuestionType.DAILY, null=False, blank=False)
+    answer_type = models.CharField(max_length=2, choices=AnswerType.choices, default=AnswerType.YES_NO, null=False, blank=False)
+    allows_observations = models.BooleanField(null=False, blank=False, default=True)
 
     form_abs = models.ManyToManyField(FormAbs)
 
@@ -356,10 +365,10 @@ class Question(QuestionAbs):
         if not self.question_abs: return None
         return self.question_abs.allows_observations
 
-    yes_no = models.BooleanField(name='Respuesta Sí-No', null=True, blank=True, default=None)
-    good_regular_bad = models.CharField(name='Respuesta Bueno-Regular-Malo', max_length=1, choices=GoodRegularBadAnswers.choices, default=None, null=True, blank=True)
-    number = models.IntegerField(name='Respuesta Numérica', null=True, blank=True)
-    text = models.CharField(name='Respuesta de texto', max_length=1024, null=True, blank=True)
+    yes_no = models.BooleanField(null=True, blank=True, default=None)
+    good_regular_bad = models.CharField(max_length=1, choices=GoodRegularBadAnswers.choices, default=None, null=True, blank=True)
+    number = models.IntegerField(null=True, blank=True)
+    text = models.CharField(max_length=1024, null=True, blank=True)
         
     @property
     def answer(self) -> Union[bool, GoodRegularBadAnswers, int, str, None]:
@@ -384,13 +393,56 @@ class Question(QuestionAbs):
     def __str__(self) -> str:
         return self.__repr__()
 
-def _question_abs_post_init(sender, instance, using, **kwargs):
+# def _question_abs_post_init(sender, instance, using, **kwargs): # TODO: if below works, delete this line
+def _question_abs_post_init(sender, instance, **kwargs):
     # if there is a part and that part has a vehicle, the vehicle of the QuationsAbs should be the vehicle of the part
     if (instance.part):
         if (instance.part.vehicle):
             instance.vehicle = instance.part.vehicle
 
-def _question_post_init(sender, instance, using, **kwargs):
+
+
+### SIGNALS ###
+
+def _part_all_post_save(sender, instance, created, **kwargs):
+    # sets the last_changed_km of the part to the vehicle's currnent km if no km was specified
+    if created and instance.abstract_part:
+        if sender == PartWithLifespan or sender == PartTyre:
+            if instance.abstract_part.change_frequency_timedelta:
+                instance.change_frequency_timedelta = instance.abstract_part.change_frequency_timedelta
+            if instance.abstract_part.change_frequency_km:
+                instance.change_frequency_km = instance.abstract_part.change_frequency_km
+        else: # sender == PartWithoutLifespanAbs:
+            pass
+
+        if not instance.info and instance.abstract_part.info:
+            instance.info = instance.abstract_part.info
+
+def _part_abs_all_post_save(sender, instance, created, **kwargs):
+    if sender == PartWithLifespanAbs:
+        for inst in instance.objects.all().parts_with_lifespan:
+            if inst.update_info:
+                inst.change_frequency_timedelta = instance.change_frequency_timedelta
+                inst.change_frequency_km = instance.change_frequency_km
+    elif sender == PartTyreAbs:
+        for inst in instance.objects.all().part_tyre:
+            if inst.update_info:
+                inst.change_frequency_timedelta = instance.change_frequency_timedelta
+                inst.change_frequency_km = instance.change_frequency_km
+    else: # sender == PartWithoutLifespanAbs:
+        pass
+        # for inst in instance.objects.all().parts_without_lifespan:
+        #     pass
+
+
+signals.post_save.connect(_part_all_post_save, sender=PartWithLifespan, weak=False, dispatch_uid='main.models._part_all_post_save.PartWithLifespan')
+signals.post_save.connect(_part_all_post_save, sender=PartTyre, weak=False, dispatch_uid='main.models._part_all_post_save.PartTyre')
+signals.post_save.connect(_part_abs_all_post_save, sender=PartWithLifespanAbs, weak=False, dispatch_uid='main.models._part_abs_all_update.PartWithLifespanAbs')
+signals.post_save.connect(_part_abs_all_post_save, sender=PartTyreAbs, weak=False, dispatch_uid='main.models._part_abs_all_update.PartTyreAbs')
+signals.post_save.connect(_part_abs_all_post_save, sender=PartWithoutLifespanAbs, weak=False, dispatch_uid='main.models._part_abs_all_update.PartWithoutLifespanAbs')
+
+
+def _question_post_init(sender, instance, **kwargs):
     # sets the question_title, quesiton_group, info, part, vehicle, question_type, answer_type and allows_observations from the QuestionAbs
     if (instance.question_abs):
         instance.question_title = instance.question_abs.question_title
