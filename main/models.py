@@ -424,10 +424,10 @@ def _question_abs_post_init(sender, instance, **kwargs):
 
 ### SIGNALS ###
 
-def _part_all_post_save(sender, instance, created, **kwargs):
+def _part_all_pre_save(sender, instance, **kwargs):
     # sets the last_changed_km of the part to the vehicle's currnent km if no km was specified
+    created = instance.pk is None
     if created and instance.abstract_part:
-        save = False
         if sender == PartWithLifespan or sender == PartTyre:
             td = instance.abstract_part.change_frequency_timedelta
             km = instance.abstract_part.change_frequency_km
@@ -435,45 +435,35 @@ def _part_all_post_save(sender, instance, created, **kwargs):
                 instance.change_frequency_timedelta = td
             if km:
                 instance.change_frequency_km = km
-            save = td or km
         else: # sender == PartWithoutLifespanAbs:
             pass
 
         if not instance.info and instance.abstract_part.info:
             instance.info = instance.abstract_part.info
-            save = True
 
-        if save:
-            instance.save()
-
-def _part_abs_all_post_save(sender, instance, created, **kwargs):
-    save = False
+def _part_abs_all_pre_save(sender, instance, **kwargs):
     if sender == PartWithLifespanAbs:
         for inst in instance.parts_with_lifespan:
             if inst.update_info:
                 inst.change_frequency_timedelta = instance.change_frequency_timedelta
                 inst.change_frequency_km = instance.change_frequency_km
-                save = True
+                inst.save()
     elif sender == PartTyreAbs:
         for inst in instance.parts_tyre:
             if inst.update_info:
                 inst.change_frequency_timedelta = instance.change_frequency_timedelta
                 inst.change_frequency_km = instance.change_frequency_km
-                save = True
+                inst.save()
     else: # sender == PartWithoutLifespanAbs:
         pass
         # for inst in instance.parts_without_lifespan:
         #     pass
-    
-    if save:
-        instance.save()
 
-# TODO: these signals are recursive
-signals.post_save.connect(_part_all_post_save, sender=PartWithLifespan, weak=False, dispatch_uid='main.models._part_all_post_save.PartWithLifespan')
-signals.post_save.connect(_part_all_post_save, sender=PartTyre, weak=False, dispatch_uid='main.models._part_all_post_save.PartTyre')
-signals.post_save.connect(_part_abs_all_post_save, sender=PartWithLifespanAbs, weak=False, dispatch_uid='main.models._part_abs_all_update.PartWithLifespanAbs')
-signals.post_save.connect(_part_abs_all_post_save, sender=PartTyreAbs, weak=False, dispatch_uid='main.models._part_abs_all_update.PartTyreAbs')
-signals.post_save.connect(_part_abs_all_post_save, sender=PartWithoutLifespanAbs, weak=False, dispatch_uid='main.models._part_abs_all_update.PartWithoutLifespanAbs')
+signals.pre_save.connect(_part_all_pre_save, sender=PartWithLifespan, weak=False, dispatch_uid='main.models._part_all_pre_save.PartWithLifespan')
+signals.pre_save.connect(_part_all_pre_save, sender=PartTyre, weak=False, dispatch_uid='main.models._part_all_pre_save.PartTyre')
+signals.pre_save.connect(_part_abs_all_pre_save, sender=PartWithLifespanAbs, weak=False, dispatch_uid='main.models._part_abs_all_pre_save.PartWithLifespanAbs')
+signals.pre_save.connect(_part_abs_all_pre_save, sender=PartTyreAbs, weak=False, dispatch_uid='main.models._part_abs_all_pre_save.PartTyreAbs')
+signals.pre_save.connect(_part_abs_all_pre_save, sender=PartWithoutLifespanAbs, weak=False, dispatch_uid='main.models._part_abs_all_pre_save.PartWithoutLifespanAbs')
 
 
 def _question_post_init(sender, instance, **kwargs):
