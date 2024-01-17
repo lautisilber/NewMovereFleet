@@ -42,7 +42,7 @@ class TimeStampMixin(models.Model):
 class Company(TimeStampMixin):
     url_name = 'company'
     name = models.CharField(max_length=64, null=False, unique=True, blank=False)
-    info = models.CharField(max_length=256, null=True, blank=True)
+    info = models.CharField(max_length=128, null=True, blank=True)
 
     def __repr__(self) -> str:
         return f'Company(name={self.name})'
@@ -56,11 +56,11 @@ class Vehicle(TimeStampMixin):
 
     url_name = 'vehicle'
     name = models.CharField(max_length=64, null=False, unique=True, blank=False)
-    info = models.CharField(max_length=256, null=True, blank=True)
+    info = models.CharField(max_length=128, null=True, blank=True)
     km = models.PositiveIntegerField(default=0, null=False, blank=False)
     fuel = models.PositiveSmallIntegerField(default=0, null=False, blank=False)
         
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=False, blank=False, related_name='a1', related_query_name='a2')
+    company = models.ForeignKey(Company, on_delete=models.RESTRICT, null=False, blank=False, related_name='a1', related_query_name='a2')
     parts_proxy = GenericRelation("PartProxy")
 
     def __repr__(self) -> str:
@@ -93,18 +93,21 @@ class PartAbs(TimeStampMixin):
 
     name = models.CharField(max_length=64, null=False, unique=True, blank=False)
     info = models.CharField(max_length=128, null=True, blank=True)
+    proxy = GenericRelation(PartAbsProxy)
+    @property
+    def get_proxy(self):
+        return self.proxy.first()
 
 class PartWithLifespanAbs(PartAbs):
     class Meta:
         default_related_name = 'parts_with_lifespan_abs'
 
-    proxy = GenericRelation(PartAbsProxy)
     change_frequency_timedelta = models.DurationField(null=True, blank=True, default=None)
     change_frequency_km = models.PositiveIntegerField(null=True, blank=True, default=None)
 
     @property
     def parts_with_lifespan(self):
-        return PartWithLifespan.objects.filter(abstract_part=self).all()
+        return PartWithLifespan.objects.filter(part_abs=self).all()
 
     def __repr__(self) -> str:
         return f'PartWithLifespanAbs(name={self.name})'
@@ -116,13 +119,12 @@ class PartTyreAbs(PartAbs):
     class Meta:
         default_related_name = 'parts_tyre_abs'
 
-    proxy = GenericRelation(PartAbsProxy)
     change_frequency_timedelta = models.DurationField(null=True, blank=True, default=None)
     change_frequency_km = models.PositiveIntegerField(null=True, blank=True, default=None)
 
     @property
     def parts_tyre(self):
-        return PartTyre.objects.filter(abstract_part=self).all()
+        return PartTyre.objects.filter(part_abs=self).all()
 
     def __repr__(self) -> str:
         return f'PartTyreAbs(name={self.name})'
@@ -134,11 +136,9 @@ class PartWithoutLifespanAbs(PartAbs):
     class Meta:
         default_related_name = 'parts_without_lifespan_abs'
 
-    proxy = GenericRelation(PartAbsProxy)
-
     @property
     def parts_without_lifespan(self):
-        return PartWithoutLifespan.objects.filter(abstract_part=self).all()
+        return PartWithoutLifespan.objects.filter(part_abs=self).all()
 
     def __repr__(self) -> str:
         return f'PartTyreAbs(name={self.name})'
@@ -160,8 +160,15 @@ class PartProxy(TimeStampMixin):
 
 
 class Part(TimeStampMixin):
-    # should be meta, but is not, so that it can have relationships and, with polymorphic, act as a base class
-    # https://stackoverflow.com/questions/30343212/foreignkey-field-related-to-abstract-model-in-django
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        v_kw = 'vehicle'
+        self._vehicle: Optional[Vehicle] = None
+        if v_kw in kwargs:
+            v = kwargs.pop[v_kw]
+            if isinstance(v, Vehicle):
+                self._vehicle = v
+        super().__init__(*args, **kwargs)
+
 
     class Meta:
         abstract = True
@@ -175,18 +182,29 @@ class Part(TimeStampMixin):
 
     name = models.CharField(max_length=64, null=False, unique=True, blank=False)
     info = models.CharField(max_length=128, null=True, blank=True)
-    vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, null=False, blank=False)
+    # vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, null=False, blank=False)
+    proxy = GenericRelation(PartProxy) # should only one exist
+    @property
+    def get_proxy(self):
+        return self.proxy.first()
     last_changed_datetime = models.DateTimeField(null=False, blank=True, default=timezone.now) # the date this part was last changed (of the vehicle)
     last_changed_km = models.PositiveIntegerField(null=False, blank=True, default=0) # the vehicle km at which this part was changed
     functionality = models.CharField(max_length=2, choices=Functionality.choices, default=Functionality.OK, null=False, blank=False)
-    update_info = models.BooleanField(null=False, blank=False, default=True) # if True, the part's data will be updated when the PartAbs's data does
+    update_info_with_abs = models.BooleanField(null=False, blank=False, default=True) # if True, the part's data will be updated when the PartAbs's data does
+
+    @property
+    def vehicle(self) -> Optional[Vehicle]:
+        if self.get_proxy:
+            v = self.get_proxy.vehicle
+            if v:
+                return v
+        return None
 
 class PartWithLifespan(Part):
     class Meta:
         default_related_name = 'parts_with_lifespan'
 
-    proxy = GenericRelation(PartProxy)
-    part_abs = GenericRelation(PartAbsProxy)
+    part_abs = models.ForeignKey(PartWithLifespanAbs, on_delete=models.CASCADE, null=False, blank=False)
 
     change_frequency_timedelta = models.DurationField(null=True, blank=True)
     change_frequency_km = models.PositiveIntegerField(null=True, blank=True)
@@ -211,8 +229,7 @@ class PartTyre(Part):
     class Meta:
         default_related_name = 'parts_tyre'
 
-    proxy = GenericRelation(PartProxy)
-    part_abs = GenericRelation(PartAbsProxy)
+    part_abs = models.ForeignKey(PartTyreAbs, on_delete=models.CASCADE, null=False, blank=False)
 
     change_frequency_timedelta = models.DurationField(null=True, blank=True)
     change_frequency_km = models.PositiveIntegerField(null=True, blank=True)
@@ -239,8 +256,7 @@ class PartWithoutLifespan(Part):
     class Meta:
         default_related_name = 'parts_without_lifespan'
 
-    proxy = GenericRelation(PartProxy)
-    part_abs = GenericRelation(PartAbsProxy)
+    part_abs = models.ForeignKey(PartWithoutLifespanAbs, on_delete=models.CASCADE, null=False, blank=False)
 
     def __repr__(self) -> str:
         return f'PartWithoutLifespan(name={self.name}, vehicle={self.vehicle})'
@@ -264,8 +280,8 @@ class PartChangeNotice(TimeStampMixin):
     # ojo que todos los ForeignKeys que tengan (null=True, blank=False), pueden generar un error, si son null, pero se les requiere que se complete en un form
     # esto se dejó así porque la única situació en la que deben ser null es si la referencia se perdiera pero no se quiere perder este objeto. Esto no debería
     # pasar si todo funciona con normalidad
-    issued_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=False, related_name='f1', related_query_name='f2')
-    part = models.ForeignKey(PartProxy, on_delete=models.CASCADE, null=False, blank=False, related_name='g1', related_query_name='g2')
+    issued_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=False)
+    part = models.ForeignKey(PartProxy, on_delete=models.CASCADE, null=False, blank=False)
     info = models.CharField(max_length=1024, null=True, blank=True)
     urgency_type = models.CharField(max_length=2, choices=ChangeUrgency.choices, default=ChangeUrgency.NOTICE, null=False, blank=False)
 
@@ -279,8 +295,8 @@ class PartFix(TimeStampMixin):
     class Meta:
         default_related_name = 'part_fixes'
 
-    done_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=False, limit_choices_to={"profile__position_type": Profile.PositionType.MECHANIC}, related_name='h1', related_query_name='h2') # TODO: check if limit_choices_to works correctly
-    part = models.ForeignKey(PartProxy, on_delete=models.CASCADE, related_name='i1', related_query_name='i2')
+    done_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=False, limit_choices_to={"profile__position_type": Profile.PositionType.MECHANIC}) # TODO: check if limit_choices_to works correctly
+    part = models.ForeignKey(PartProxy, on_delete=models.CASCADE)
     replaced = models.BooleanField(null=False, blank=False, default=False) # si fue arreglado, eto es falso. si fue reemplazado, esto debe ser veradero
     success = models.BooleanField(null=False, blank=False, default=True)
     cost = models.PositiveIntegerField(null=True, blank=True)
@@ -294,7 +310,7 @@ class PartFix(TimeStampMixin):
 ### QUESTIONS & FORMS ###
 
 class QuestionGroup(TimeStampMixin):
-    name = models.CharField(max_length=64, null=False, blank=False, unique=True)
+    name = models.CharField(max_length=32, null=False, blank=False, unique=True)
 
     def __repr__(self) -> str:
         return f'QuestionGroup(name={self.name})'
@@ -317,12 +333,11 @@ class QuestionAbs(TimeStampMixin):
         NUMBER = 'NR', gettext_lazy('Número')
         TEXT = 'TX', gettext_lazy('Texto')
 
-    question_group = models.ForeignKey(QuestionGroup, on_delete=models.SET_NULL, null=True, blank=True, related_name='n1', related_query_name='n2')
-
-    question_title = models.CharField(max_length=128, null=False, blank=False)
+    title = models.CharField(max_length=128, null=False, blank=False)
     info = models.CharField(max_length=256, null=True, blank=True)
-    part = models.ForeignKey(PartAbsProxy, on_delete=models.SET_NULL, null=True, blank=True, related_name='o1', related_query_name='o2')
-    vehicle = models.ForeignKey(Vehicle, on_delete=models.SET_NULL, null=True, blank=True, related_name='p1', related_query_name='p2')
+    question_group = models.ForeignKey(QuestionGroup, on_delete=models.SET_NULL, null=True, blank=True)
+    part = models.ForeignKey(PartProxy, on_delete=models.SET_NULL, null=True, blank=True)
+    vehicle = models.ForeignKey(Vehicle, on_delete=models.SET_NULL, null=True, blank=True)
     question_type = models.CharField(max_length=1, choices=QuestionType.choices, default=QuestionType.DAILY, null=False, blank=False)
     answer_type = models.CharField(max_length=2, choices=AnswerType.choices, default=AnswerType.YES_NO, null=False, blank=False)
     allows_observations = models.BooleanField(null=False, blank=False, default=True)
@@ -334,7 +349,7 @@ class QuestionAbs(TimeStampMixin):
         return self.__repr__()
 
 class FormGroup(TimeStampMixin):
-    name = models.CharField(max_length=64, null=False, blank=False, unique=True)
+    name = models.CharField(max_length=32, null=False, blank=False, unique=True)
 
     def __repr__(self) -> str:
         return f'FormGroup(name={self.name})'
@@ -346,13 +361,13 @@ class FormAbs(TimeStampMixin):
     class Meta:
         default_related_name = 'forms_abs'
 
-    name = models.CharField(max_length=64, null=False, blank=False, unique=True)
+    name = models.CharField(max_length=32, null=False, blank=False, unique=True)
     form_group = models.ForeignKey(FormGroup, on_delete=models.SET_NULL, null=True, blank=True, related_name='j1', related_query_name='j2')
 
     questions_abs = models.ManyToManyField(QuestionAbs)
 
     vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, null=False, blank=False, related_name='k1', related_query_name='k2')
-    profile_type = models.SmallIntegerField(choices=Profile.PositionType.choices, default=Profile.PositionType.NOT_ASSIGNED, null=False)
+    profile_type = Profile.position_type
 
     # TODO: add periodicity
 
@@ -439,11 +454,21 @@ class Question(QuestionAbs):
         return self.__repr__()
 
 ### SIGNALS ###
+    
+
+def _part_and_abs_proxy_post_delete(sender, instance, **kwargs):
+    # make the part(abs)proxy <-> part(abs) relationship be deleted like cascade
+    if instance.content_object:
+        instance.content_object.delete()
+
+signals.post_delete.connect(_part_and_abs_proxy_post_delete, sender=PartAbsProxy, weak=False, dispatch_uid='main.models._part_and_abs_proxy_pre_delete.PartAbsProxy')
+signals.post_delete.connect(_part_and_abs_proxy_post_delete, sender=PartProxy, weak=False, dispatch_uid='main.models._part_and_abs_proxy_pre_delete.PartProxy')
 
 def _part_all_pre_save(sender, instance, **kwargs):
+    # sets the part's change_frequency_timedelta and change_frequency_km to the ones of the part_abs
     # sets the last_changed_km of the part to the vehicle's currnent km if no km was specified
     created = instance.pk is None
-    if created and instance.abstract_part:
+    if created: # and instance.part_abs:
         if sender == PartWithLifespan or sender == PartTyre:
             td = instance.part_abs.change_frequency_timedelta
             km = instance.part_abs.change_frequency_km
@@ -456,16 +481,21 @@ def _part_all_pre_save(sender, instance, **kwargs):
 
         if not instance.info and instance.part_abs.info:
             instance.info = instance.part_abs.info
+    
+def _part_abs_all_post_save(sender, instance, created, **kwargs):
+    if created:
+        proxy = PartAbsProxy(content_object=instance)
+        proxy.save()
 
-def _part_abs_all_pre_save(sender, instance, **kwargs):
+    # updates change_frequency_timedelta and change_frequency_km of the parts if they have to be updated when the part_abs are
     if sender == PartWithLifespanAbs:
-        for inst in instance.parts_with_lifespan:
+        for inst in instance.parts_with_lifespan.all():
             if inst.update_info:
                 inst.change_frequency_timedelta = instance.change_frequency_timedelta
                 inst.change_frequency_km = instance.change_frequency_km
                 inst.save()
     elif sender == PartTyreAbs:
-        for inst in instance.parts_tyre:
+        for inst in instance.parts_tyre.all():
             if inst.update_info:
                 inst.change_frequency_timedelta = instance.change_frequency_timedelta
                 inst.change_frequency_km = instance.change_frequency_km
@@ -474,29 +504,33 @@ def _part_abs_all_pre_save(sender, instance, **kwargs):
         pass
         # for inst in instance.parts_without_lifespan:
         #     pass
-    
-def _part_abs_all_post_save(sender, instance, created, **kwargs):
-    if created:
-        proxy = PartAbsProxy(content_object=instance)
-        proxy.save()
 
 def _part_all_post_save(sender, instance, created, **kwargs):
+    # the instance._vehicle variable has to be set to a Vehicle instance.
+    # Otherwise, the necessary PartProxy cannot be created due to it requiring a vehicle
     if created:
-        proxy = PartProxy(content_object=instance, vehicle=instance.vehicle)
+        proxy = PartProxy(content_object=instance, vehicle=instance._vehicle)
         proxy.save()
+
+def _part_and_abs_all_post_delete(sender, instance, **kwargs):
+    # make the part(abs)proxy <-> part(abs) relationship be deleted like cascade
+    for proxy in instance.proxy.all(): # should only be one
+        proxy.delete()
 
 signals.pre_save.connect(_part_all_pre_save, sender=PartWithLifespan, weak=False, dispatch_uid='main.models._part_all_pre_save.PartWithLifespan')
 signals.pre_save.connect(_part_all_pre_save, sender=PartTyre, weak=False, dispatch_uid='main.models._part_all_pre_save.PartTyre')
-# signals.pre_save.connect(_part_abs_all_pre_save, sender=PartWithLifespanAbs, weak=False, dispatch_uid='main.models._part_abs_all_pre_save.PartWithLifespanAbs')
-# signals.pre_save.connect(_part_abs_all_pre_save, sender=PartTyreAbs, weak=False, dispatch_uid='main.models._part_abs_all_pre_save.PartTyreAbs')
-# signals.pre_save.connect(_part_abs_all_pre_save, sender=PartWithoutLifespanAbs, weak=False, dispatch_uid='main.models._part_abs_all_pre_save.PartWithoutLifespanAbs')
 signals.post_save.connect(_part_abs_all_post_save, sender=PartWithLifespanAbs, weak=False, dispatch_uid='main.models._part_abs_all_post_save.PartWithLifespanAbs')
 signals.post_save.connect(_part_abs_all_post_save, sender=PartTyreAbs, weak=False, dispatch_uid='main.models._part_abs_all_post_save.PartTyreAbs')
 signals.post_save.connect(_part_abs_all_post_save, sender=PartWithoutLifespanAbs, weak=False, dispatch_uid='main.models._part_abs_all_post_save.PartWithoutLifespanAbs')
 signals.post_save.connect(_part_all_post_save, sender=PartWithLifespan, weak=False, dispatch_uid='main.models._part_all_post_save.PartWithLifespanAbs')
 signals.post_save.connect(_part_all_post_save, sender=PartTyre, weak=False, dispatch_uid='main.models._part_all_post_save.PartTyreAbs')
 signals.post_save.connect(_part_all_post_save, sender=PartWithoutLifespan, weak=False, dispatch_uid='main.models._part_all_post_save.PartWithoutLifespanAbs')
-
+signals.post_delete.connect(_part_and_abs_all_post_delete, sender=PartWithLifespanAbs, weak=False, dispatch_uid='main.models._part_and_abs_all_post_delete.PartWithLifespanAbs')
+signals.post_delete.connect(_part_and_abs_all_post_delete, sender=PartTyreAbs, weak=False, dispatch_uid='main.models._part_and_abs_all_post_delete.PartTyreAbs')
+signals.post_delete.connect(_part_and_abs_all_post_delete, sender=PartWithoutLifespanAbs, weak=False, dispatch_uid='main.models._part_and_abs_all_post_delete.PartWithoutLifespanAbs')
+signals.post_delete.connect(_part_and_abs_all_post_delete, sender=PartWithLifespan, weak=False, dispatch_uid='main.models._part_and_abs_all_post_delete.PartWithLifespan')
+signals.post_delete.connect(_part_and_abs_all_post_delete, sender=PartTyre, weak=False, dispatch_uid='main.models._part_and_abs_all_post_delete.PartTyre')
+signals.post_delete.connect(_part_and_abs_all_post_delete, sender=PartWithoutLifespan, weak=False, dispatch_uid='main.models._part_and_abs_all_post_delete.PartWithoutLifespan')
 
 def _question_post_init(sender, instance, **kwargs):
     # sets the question_title, quesiton_group, info, part, vehicle, question_type, answer_type and allows_observations from the QuestionAbs

@@ -9,7 +9,7 @@ from django.utils.translation import gettext_lazy
 from django.core.exceptions import ValidationError
 from django.contrib.contenttypes.models import ContentType
 
-from .models import Company, Vehicle, PartAbsProxy, PartWithLifespanAbs, PartTyreAbs, PartWithoutLifespanAbs, Part, PartWithLifespan, PartTyre, PartWithoutLifespan
+from .models import Company, Vehicle, PartAbsProxy, PartWithLifespanAbs, PartTyreAbs, PartWithoutLifespanAbs, PartProxy, PartWithLifespan, PartTyre, PartWithoutLifespan
 
 # class BaseForm(forms.Form):
 #     def __init__(self, *args, **kwargs):
@@ -58,17 +58,34 @@ class PartWithoutLifespanAbsForm(forms.ModelForm):
         model = PartWithoutLifespanAbs
         fields = '__all__'
 
-class PartWithLifespanForm(forms.ModelForm):
+class PartBaseForm(forms.ModelForm):
+    vehicle = forms.ModelChoiceField(required=True, queryset=Vehicle.objects.all())
+    def save(self, commit: bool=True):
+        # can't really use this with commit = False
+        instance = super(PartBaseForm, self).save(commit=False)
+
+        instance._vehicle = self.cleaned_data['vehicle']
+        print(instance._vehicle)
+
+        if commit:
+            self.save_m2m()
+            instance.save()
+
+        return instance
+
+class PartWithLifespanForm(PartBaseForm):
     class Meta:
         model = PartWithLifespan
-        exclude = ('change_frequency_timedelta', 'change_frequency_km')
+        fields = '__all__'
+        # exclude = ('change_frequency_timedelta', 'change_frequency_km')
 
-class PartTyreForm(forms.ModelForm):
+class PartTyreForm(PartBaseForm):
     class Meta:
         model = PartTyre
-        exclude = ('change_frequency_timedelta', 'change_frequency_km')
+        fields = '__all__'
+        # exclude = ('change_frequency_timedelta', 'change_frequency_km')
 
-class PartWithoutLifespanForm(forms.ModelForm):
+class PartWithoutLifespanForm(PartBaseForm):
     class Meta:
         model = PartWithoutLifespan
         fields = '__all__'
